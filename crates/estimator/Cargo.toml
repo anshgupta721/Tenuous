@@ -1,0 +1,10 @@
+[package]
+name = "estimator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nalgebra = { workspace = true }
+anise = { workspace = true }
+hifitime = { workspace = true }
+serde = { workspace = true }

@@ -1,0 +1,10 @@
+[workspace]
+members = ["crates/dynamics", "crates/estimator", "crates/pyfrontend"]
+resolver = "2"
+
+[workspace.dependencies]
+nalgebra = "0.33"
+anise = "0.5"
+hifitime = "4"
+serde = { version = "1", features = ["derive"] }
+rayon = "1"
