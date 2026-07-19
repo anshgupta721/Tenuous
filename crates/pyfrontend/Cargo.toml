@@ -3,10 +3,6 @@ name = "pyfrontend"
 version = "0.1.0"
 edition = "2024"
 
-[lib]
-name = "bennusim"
-crate-type = ["cdylib"]
-
 [dependencies]
 dynamics = { path = "../dynamics" }
 estimator = { path = "../estimator" }
