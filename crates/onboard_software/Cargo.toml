@@ -1,0 +1,12 @@
+[package]
+name = "onboard_software"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anise = { workspace = true }
+hifitime = { workspace = true }
+serde = { workspace = true }
+math = { workspace = true }
+dynamics = { workspace = true }
+nalgebra = { workspace = true }

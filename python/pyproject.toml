@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=61.0","wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hephaestus"
+version = "0.0.0"
+dependencies = [
+    "matplotlib",
+    "numpy",
+]
