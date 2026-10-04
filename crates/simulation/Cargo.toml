@@ -10,3 +10,4 @@ nalgebra = { workspace = true }
 onboard_software = { version = "0.1.0", path = "../onboard_software" }
 anise.workspace = true
 hifitime.workspace = true
+der = "0.8.2"
