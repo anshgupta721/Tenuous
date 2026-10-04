@@ -9,12 +9,6 @@ use onboard_software::control_stack::ControlStack;
 use simulation::config::{NX, StateVector};
 use simulation::stepper::sim_stepper;
 
-// struct TrialResult {
-//     t: Vec<f64>,
-//     x: Vec<StateVector>,
-//     u: Vec<ControlVector>,
-// }
-
 #[pyfunction]
 #[pyo3(signature = (epoch_0, x_0, t_span, dt, seed=None))]
 pub fn pysim_runner<'py>(

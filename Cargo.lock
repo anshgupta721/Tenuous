@@ -52,7 +52,7 @@ dependencies = [
  "const_format",
  "crc32fast",
  "csv",
- "der",
+ "der 0.7.10",
  "hifitime",
  "hyperdual",
  "indexmap 2.14.2",
@@ -291,6 +291,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "der"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a878c850e9e421b20262e9b41f9c860e4785fa07541c266b62ff9d1ef998a80a"
+
+[[package]]
 name = "der_derive"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -388,7 +394,7 @@ checksum = "780955b8b195a21ab8e4ac6b60dd1dbdcec1dc6c51c0617964b08c81785e12c9"
 [[package]]
 name = "dynamics"
 version = "0.1.0"
-source = "git+https://github.com/anshgupta721/Azimuth.git#00206aa9dda830e7a0447502782b893dd49ef7dc"
+source = "git+https://github.com/anshgupta721/Azimuth.git#e28aa40d848a24074c3235c3b685746f488c2823"
 dependencies = [
  "nalgebra",
 ]
@@ -873,7 +879,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 [[package]]
 name = "math"
 version = "0.1.0"
-source = "git+https://github.com/anshgupta721/Azimuth.git#00206aa9dda830e7a0447502782b893dd49ef7dc"
+source = "git+https://github.com/anshgupta721/Azimuth.git#e28aa40d848a24074c3235c3b685746f488c2823"
 dependencies = [
  "nalgebra",
 ]
@@ -1508,7 +1514,7 @@ dependencies = [
 [[package]]
 name = "sensors"
 version = "0.1.0"
-source = "git+https://github.com/anshgupta721/Azimuth.git#00206aa9dda830e7a0447502782b893dd49ef7dc"
+source = "git+https://github.com/anshgupta721/Azimuth.git#e28aa40d848a24074c3235c3b685746f488c2823"
 dependencies = [
  "nalgebra",
  "rand",
@@ -1603,6 +1609,7 @@ name = "simulation"
 version = "0.1.0"
 dependencies = [
  "anise",
+ "der 0.8.2",
  "dynamics",
  "hifitime",
  "nalgebra",
