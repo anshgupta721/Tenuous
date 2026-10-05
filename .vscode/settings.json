@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
         "${workspaceFolder}/pysim"
-    ]
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:venv"
 }

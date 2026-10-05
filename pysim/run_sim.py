@@ -7,7 +7,7 @@ from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module
 OUTPUT_CSV = "sim_output.csv"
 
 if __name__ == "__main__":
-    epoch_0 = "2025-07-15T11:23:27.30 UTC"
+    epoch_0 = "2019-07-15T11:23:27.30 UTC"
     x_0 = np.array([
         -194.33826150101773, 824.8947002999065, 1653.703391999927,
         .08094043359034313, -1.4478938749999684, .731723312100025,
