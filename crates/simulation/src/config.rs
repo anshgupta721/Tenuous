@@ -1,13 +1,12 @@
-
-use anise::frames::{Frame};
+use anise::frames::Frame;
 
 use anise::constants::{frames::SUN_J2000, orientations};
 use anise::prelude::*;
 use nalgebra::{SMatrix, SVector};
 
+use dynamics::forces::srp::srp_acceleration;
 use dynamics::gravity::gravity::GravityField;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
-use dynamics::forces::srp::srp_acceleration;
 
 // use dynamics::models::state_space_model::{LTVSystem, StateSpace};
 /// This file contains the simulation configuration for the plant dynamics configuration
@@ -18,8 +17,6 @@ pub const BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/de440s.bsp
 pub const PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/pck11.pca");
 pub const BENNU_BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/sb-101955-118.bsp");
 pub const BENNU_PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/bennu_v14.pca");
-
-
 
 pub const NX: usize = 6;
 
@@ -38,7 +35,6 @@ pub fn fix_bennu_parent(mut almanac: Almanac) -> Almanac {
     almanac.set_planetary_data_from_id(BENNU_ID, bennu).unwrap();
     almanac
 }
-
 
 pub const REF_RADIUS_SHM: f64 = 0.29;
 
@@ -114,7 +110,7 @@ pub const COEFFS: &[(usize, usize, f64, f64)] = &[
     (10, 8, 4.8226367377983336e-05, 3.5495594997370517e-06),
     (10, 9, -1.5167437784847748e-05, -4.801254471296015e-05),
     (10, 10, -3.242272984657309e-05, 6.423728830556502e-05),
-    ];
+];
 
 // Constant density
 // pub const COEFFS: &[(usize, usize, f64, f64)] = &[
@@ -132,11 +128,6 @@ pub const COEFFS: &[(usize, usize, f64, f64)] = &[
 //     (4, 3, -9.5735108200e-05, -4.4443736800e-04),
 //     (4, 4, 6.7153806300e-04, 2.2430853500e-03),
 //     ];
-
-
-
-    
-
 
 pub fn load() -> HarmonicCoeffs {
     let mut harmonics = HarmonicCoeffs::zeros(SHM_DEGREE);
@@ -169,12 +160,7 @@ impl Plant {
             body_fixed_frame,
         }
     }
-    pub fn derivative(
-        &self,
-        x: StateVector,
-        almanac: &Almanac,
-        epoch: Epoch,
-    ) -> StateVector {
+    pub fn derivative(&self, x: StateVector, almanac: &Almanac, epoch: Epoch) -> StateVector {
         let pos_inertial = SVector::<f64, 3>::from_row_slice(&[x[0], x[1], x[2]]);
 
         let dcm_i2b = almanac
@@ -185,9 +171,12 @@ impl Plant {
             .unwrap();
         let pos_body_fixed = dcm_i2b.rot_mat * pos_inertial;
         // For SRP, need to pass in sun's position wrt to Bennu
-        let sun_pos_wrt_bennu = almanac.translate(SUN_J2000, INER_FRAME, epoch, None).unwrap().radius_km;
+        let sun_pos_wrt_bennu = almanac
+            .translate(SUN_J2000, INER_FRAME, epoch, None)
+            .unwrap()
+            .radius_km;
         let accel = self.gravity.acceleration(pos_body_fixed);
-        // Acceleration in the Bennu J2000 frame, 
+        // Acceleration in the Bennu J2000 frame,
         let accel_inertial = dcm_b2i.rot_mat * accel; //+ srp_acceleration(sun_pos_wrt_bennu, pos_inertial, SC_CS_AREA / SC_MASS,SC_REFLECTIVITY)
         StateVector::from_row_slice(&[
             x[3],
