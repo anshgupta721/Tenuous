@@ -62,7 +62,7 @@ pub fn sim_stepper(
             dt,
             x,
         );
-        println!("{x}");
+        // println!("{x}");
         // Sensor update based on state
         let sensor_n = sensor_dynamics(x);
 

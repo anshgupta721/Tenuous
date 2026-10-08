@@ -4,15 +4,44 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module
 
+
+def set_axes_equal(ax):
+    """
+    Make axes of 3D plot have equal scale so that spheres appear as spheres,
+    cubes as cubes, etc.
+
+    Input
+      ax: a matplotlib axis, e.g., as output from plt.gca().
+    """
+
+    x_limits = ax.get_xlim3d()
+    y_limits = ax.get_ylim3d()
+    z_limits = ax.get_zlim3d()
+
+    x_range = abs(x_limits[1] - x_limits[0])
+    x_middle = np.mean(x_limits)
+    y_range = abs(y_limits[1] - y_limits[0])
+    y_middle = np.mean(y_limits)
+    z_range = abs(z_limits[1] - z_limits[0])
+    z_middle = np.mean(z_limits)
+
+    # The plot bounding box is a sphere in the sense of the infinity
+    # norm, hence I call half the max range the plot radius.
+    plot_radius = 0.5*max([x_range, y_range, z_range])
+
+    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
+
 OUTPUT_CSV = "sim_output.csv"
 
 if __name__ == "__main__":
     epoch_0 = "2019-07-15T11:23:27.30 UTC"
     x_0 = np.array([
-        -194.33826150101773, 824.8947002999065, 1653.703391999927,
-        .08094043359034313, -1.4478938749999684, .731723312100025,
+        1.28237, 0, 0,
+        0, 0.0000617543738092, 0,
     ])
-    t, states, _ = pysim_runner(epoch_0, x_0, (0.0, 28800), 0.1)
+    t, states, _ = pysim_runner(epoch_0, x_0, (0.0, 130474.456227), 60)
 
     state_names = ["x", "y", "z", "x_dot", "y_dot", "z_dot"]
     state_units = ["km", "km", "km", "km/s", "km/s", "km/s"]
@@ -39,7 +68,13 @@ if __name__ == "__main__":
     axis.set_zlabel("z (km)")
     axis.set_box_aspect((1, 1, 1))
     axis.legend()
+    set_axes_equal(axis)
+    def disable_vert_rotation(event):
+        azim = axis.azim
+        elev = axis.elev
+        axis.view_init(elev=elev, azim=azim, roll=0.0)
     fig.tight_layout()
+    fig.canvas.mpl_connect('motion_notify_event', disable_vert_rotation)
     plt.show()
 
 
