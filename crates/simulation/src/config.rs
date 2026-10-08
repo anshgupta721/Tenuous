@@ -1,10 +1,13 @@
-use anise::constants::frames::{MOON_J2000, MOON_PA_DE440_FRAME};
-use anise::frames::Frame;
+
+use anise::frames::{Frame};
+
+use anise::constants::{frames::SUN_J2000, orientations};
 use anise::prelude::*;
 use nalgebra::{SMatrix, SVector};
 
 use dynamics::gravity::gravity::GravityField;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
+use dynamics::forces::srp::srp_acceleration;
 
 // use dynamics::models::state_space_model::{LTVSystem, StateSpace};
 /// This file contains the simulation configuration for the plant dynamics configuration
@@ -13,18 +16,37 @@ use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 
 pub const BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/de440s.bsp");
 pub const PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/pck11.pca");
-pub const MOON_PA_FILE: &str =
-    concat!(env!("CARGO_MANIFEST_DIR"), "/data/moon_pa_de440_200625.bpc");
+pub const BENNU_BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/sb-101955-118.bsp");
+pub const BENNU_PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/bennu_v14.pca");
+
+
 
 pub const NX: usize = 6;
 
-pub const MOON_MU: f64 = 4902.801076;
-pub const INER_FRAME: Frame = MOON_J2000;
-pub const CEL_FIXED_FRAME: Frame = MOON_PA_DE440_FRAME;
+pub const BENNU_MU: f64 = 4.89044967462e-09; // km^3 / s^2
 
-pub const REF_RADIUS_SHM: f64 = 1738.0;
+pub const INER_FRAME: Frame = Frame::new(2101955, orientations::J2000);
+pub const SUN_FRAME: Frame = SUN_J2000;
+const BENNU_ID: i32 = 2101955;
+pub const FIXED_FRAME: Frame = Frame::new(BENNU_ID, BENNU_ID);
 
-const SHM_DEGREE: usize = 8;
+pub fn fix_bennu_parent(mut almanac: Almanac) -> Almanac {
+    let mut bennu = almanac
+        .get_planetary_data_from_id(BENNU_ID)
+        .expect("Bennu missing from PCA (no GM when it was converted?)");
+    bennu.parent_id = orientations::J2000;
+    almanac.set_planetary_data_from_id(BENNU_ID, bennu).unwrap();
+    almanac
+}
+
+
+pub const REF_RADIUS_SHM: f64 = 0.29;
+
+const SHM_DEGREE: usize = 10;
+
+pub const SC_MASS: f64 = 1500.0; // kg
+pub const SC_CS_AREA: f64 = 2e-5; // km^2
+pub const SC_REFLECTIVITY: f64 = 1.4;
 
 pub const COEFFS: &[(usize, usize, f64, f64)] = &[
     (0, 0, 1.0, 0.0),
@@ -105,7 +127,6 @@ impl Plant {
     }
     pub fn derivative(
         &self,
-        t: f64,
         x: StateVector,
         almanac: &Almanac,
         epoch: Epoch,
@@ -119,8 +140,11 @@ impl Plant {
             .rotate(self.body_fixed_frame, self.inertial_frame, epoch)
             .unwrap();
         let pos_body_fixed = dcm_i2b.rot_mat * pos_inertial;
+        // For SRP, need to pass in sun's position wrt to Bennu
+        let sun_pos_wrt_bennu = almanac.translate(SUN_J2000, INER_FRAME, epoch, None).unwrap().radius_km;
         let accel = self.gravity.acceleration(pos_body_fixed);
-        let accel_inertial = dcm_b2i.rot_mat * accel;
+        // Acceleration in the Bennu J2000 frame, 
+        let accel_inertial = dcm_b2i.rot_mat * accel + srp_acceleration(sun_pos_wrt_bennu, pos_inertial, SC_CS_AREA / SC_MASS,SC_REFLECTIVITY);
         StateVector::from_row_slice(&[
             x[3],
             x[4],

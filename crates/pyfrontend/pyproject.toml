@@ -6,6 +6,10 @@ build-backend = "maturin"
 name = "pyfrontend"
 version = "0.1.0"
 requires-python = ">=3.9"
+dependencies = [
+	"numpy",
+	"matplotlib",
+]
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
