@@ -69,7 +69,8 @@ if __name__ == "__main__":
     axis.set_box_aspect((1, 1, 1))
     axis.legend()
     set_axes_equal(axis)
-    def disable_vert_rotation(event):
+    def disable_vert_rotation(_event):
+        """Keep the 3D plot's vertical rotation disabled."""
         azim = axis.azim
         elev = axis.elev
         axis.view_init(elev=elev, azim=azim, roll=0.0)
