@@ -1,13 +1,12 @@
-
-use anise::frames::{Frame};
+use anise::frames::Frame;
 
 use anise::constants::{frames::SUN_J2000, orientations};
 use anise::prelude::*;
 use nalgebra::{SMatrix, SVector};
 
+use dynamics::forces::srp::srp_acceleration;
 use dynamics::gravity::gravity::GravityField;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
-use dynamics::forces::srp::srp_acceleration;
 
 // use dynamics::models::state_space_model::{LTVSystem, StateSpace};
 /// This file contains the simulation configuration for the plant dynamics configuration
@@ -18,8 +17,6 @@ pub const BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/de440s.bsp
 pub const PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/pck11.pca");
 pub const BENNU_BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/sb-101955-118.bsp");
 pub const BENNU_PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/bennu_v14.pca");
-
-
 
 pub const NX: usize = 6;
 
@@ -39,7 +36,6 @@ pub fn fix_bennu_parent(mut almanac: Almanac) -> Almanac {
     almanac
 }
 
-
 pub const REF_RADIUS_SHM: f64 = 0.29;
 
 const SHM_DEGREE: usize = 10;
@@ -48,38 +44,34 @@ pub const SC_MASS: f64 = 1500.0; // kg
 pub const SC_CS_AREA: f64 = 2e-5; // km^2
 pub const SC_REFLECTIVITY: f64 = 1.4;
 
+// Chesley's Coefficients
 pub const COEFFS: &[(usize, usize, f64, f64)] = &[
     (0, 0, 1.0, 0.0),
     (2, 0, 0.019261012209376163, 0.0000000000000000E+00),
     (2, 1, -2.1782173147855912e-14, 3.0009695268217895e-15),
     (2, 2, 0.00306499464152612, -0.00109450399573948),
-
     (3, 0, -0.0012219404640668086, 0.0000000000000000E+00),
     (3, 1, 0.0008148921217387432, -0.0005434579977478096),
     (3, 2, -0.000934922673655136, -0.0005377851962265501),
     (3, 3, 0.0011710305387050103, -0.00031001193429507437),
-    
     (4, 0, -0.006496001836889563, 0.0000000000000000E+00),
     (4, 1, -0.0008821561290796273, -0.0005752155149983148),
     (4, 2, -0.0008707051950524519, -8.400092905051768e-05),
     (4, 3, -7.621121755654963e-05, -0.0003878715548433681),
     (4, 4, 0.0007748481150705528, 0.0022464919895245237),
-
     (5, 0, 6.72886604884985e-05, 0.0000000000000000E+00),
     (5, 1, -0.00035156263428227734, 0.00016090884095563233),
     (5, 2, -3.742917272290789e-05, -0.00026801937425613214),
     (5, 3, -2.1852446688049215e-06, -9.462855909167245e-06),
-    (5, 4, 0.0003221412731748062,  5.04640787496407e-05),
+    (5, 4, 0.0003221412731748062, 5.04640787496407e-05),
     (5, 5, -2.2767879074397064e-05, 0.00029573700474979004),
-
     (6, 0, 0.0013718245820512308, 0.0000000000000000E+00),
     (6, 1, 0.0003332494000416658, 0.00019808121908086352),
     (6, 2, 0.0002592382555926419, -0.000180395865997385),
     (6, 3, 0.0001036155694799452, -3.5437195345475506e-05),
     (6, 4, -0.00020998848165819636, -0.0005296201444343653),
-    (6, 5, 6.348119245915396e-05, -0.0001814795188487908), // check from here down
+    (6, 5, 6.348119245915396e-05, -0.0001814795188487908),
     (6, 6, 0.0003040938642307484, 5.726088595072154e-05),
-
     (7, 0, -7.908007377818328e-05, 0.0000000000000000E+00),
     (7, 1, 0.0003098125626813934, -3.7507949085619243e-05),
     (7, 2, -2.2328132337592748e-05, -0.0001014389516068962),
@@ -88,17 +80,15 @@ pub const COEFFS: &[(usize, usize, f64, f64)] = &[
     (7, 5, -0.00011470777236382891, -1.763186790110652e-05),
     (7, 6, -3.559587496287331e-05, -0.00011504366027871391),
     (7, 7, 0.0002265368233611586, -7.72339390179355e-05),
-    
     (8, 0, -0.0006815784392478206, 0.0000000000000000E+00),
-    (8, 1, -2.9030001676895305e-05, -0.00010946365118487296 ),
+    (8, 1, -2.9030001676895305e-05, -0.00010946365118487296),
     (8, 2, -0.00010233555011655501, 2.9189788934857738e-05),
-    (8, 3,  -8.738528818348646e-05, -1.484033298268544e-05),
+    (8, 3, -8.738528818348646e-05, -1.484033298268544e-05),
     (8, 4, 0.00014549556945248513, 0.00031606243027352724),
     (8, 5, 7.937279533002994e-05, 2.6009886437901692e-06),
     (8, 6, -0.00019981302771948577, 0.00016268712266082272),
     (8, 7, 8.55049523744826e-05, -0.00010092843513236085),
     (8, 8, -0.000129667463555973, -0.00018349696665281707),
-
     (9, 0, -3.503022185911064e-05, 0.0000000000000000E+00),
     (9, 1, -3.7303765509286255e-05, 9.66489722196155e-05),
     (9, 2, 8.788409745128699e-05, -6.260338739528384e-05),
@@ -109,7 +99,6 @@ pub const COEFFS: &[(usize, usize, f64, f64)] = &[
     (9, 7, -0.0001892587787490265, 3.387013269102119e-05),
     (9, 8, 0.00011617203467506834, 1.223914290309503e-05),
     (9, 9, 0.00010464014931255371, 0.0002421973026110386),
-
     (10, 0, 0.00020241448751601255, 0.0000000000000000E+00),
     (10, 1, 3.918626162623062e-05, 3.9837096806635365e-05),
     (10, 2, 0.00020522697455208243, 0.00011312810270752221),
@@ -121,8 +110,24 @@ pub const COEFFS: &[(usize, usize, f64, f64)] = &[
     (10, 8, 4.8226367377983336e-05, 3.5495594997370517e-06),
     (10, 9, -1.5167437784847748e-05, -4.801254471296015e-05),
     (10, 10, -3.242272984657309e-05, 6.423728830556502e-05),
-
 ];
+
+// Constant density
+// pub const COEFFS: &[(usize, usize, f64, f64)] = &[
+//     (0, 0, 1.0, 0.0),
+//     (2, 0, 1.8808575000e-02, 0.0000000000000000E+00),
+//     (2, 1, 4.7909300200e-04, -8.8662849500e-05),
+//     (2, 2, 3.5515097600e-03, -7.8495939600e-04),
+//     (3, 0, -1.3003493400e-03, 0.0000000000000000E+00),
+//     (3, 1, 1.0085041400e-03, -3.4391993400e-04),
+//     (3, 2, -7.2517716900e-04, -7.4072077600e-04),
+//     (3, 3, 1.1946111000e-03, -2.7502181100e-04),
+//     (4, 0, -6.3936474900e-03, 0.0000000000000000E+00),
+//     (4, 1, -8.9843206200e-04, -6.7641991800e-04),
+//     (4, 2, -8.2888952700e-04, -8.1251511300e-05),
+//     (4, 3, -9.5735108200e-05, -4.4443736800e-04),
+//     (4, 4, 6.7153806300e-04, 2.2430853500e-03),
+//     ];
 
 pub fn load() -> HarmonicCoeffs {
     let mut harmonics = HarmonicCoeffs::zeros(SHM_DEGREE);
@@ -155,12 +160,7 @@ impl Plant {
             body_fixed_frame,
         }
     }
-    pub fn derivative(
-        &self,
-        x: StateVector,
-        almanac: &Almanac,
-        epoch: Epoch,
-    ) -> StateVector {
+    pub fn derivative(&self, x: StateVector, almanac: &Almanac, epoch: Epoch) -> StateVector {
         let pos_inertial = SVector::<f64, 3>::from_row_slice(&[x[0], x[1], x[2]]);
 
         let dcm_i2b = almanac
@@ -171,10 +171,13 @@ impl Plant {
             .unwrap();
         let pos_body_fixed = dcm_i2b.rot_mat * pos_inertial;
         // For SRP, need to pass in sun's position wrt to Bennu
-        let sun_pos_wrt_bennu = almanac.translate(SUN_J2000, INER_FRAME, epoch, None).unwrap().radius_km;
+        let sun_pos_wrt_bennu = almanac
+            .translate(SUN_J2000, INER_FRAME, epoch, None)
+            .unwrap()
+            .radius_km;
         let accel = self.gravity.acceleration(pos_body_fixed);
-        // Acceleration in the Bennu J2000 frame, 
-        let accel_inertial = dcm_b2i.rot_mat * accel + srp_acceleration(sun_pos_wrt_bennu, pos_inertial, SC_CS_AREA / SC_MASS,SC_REFLECTIVITY);
+        // Acceleration in the Bennu J2000 frame,
+        let accel_inertial = dcm_b2i.rot_mat * accel; //+ srp_acceleration(sun_pos_wrt_bennu, pos_inertial, SC_CS_AREA / SC_MASS,SC_REFLECTIVITY)
         StateVector::from_row_slice(&[
             x[3],
             x[4],

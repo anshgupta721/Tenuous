@@ -2,8 +2,8 @@ use anise::prelude::*;
 use hifitime::{Epoch, Unit};
 
 use crate::config::{
-    BSP_FILE, PCA_FILE, BENNU_BSP_FILE, BENNU_PCA_FILE, INER_FRAME, FIXED_FRAME, Plant, REF_RADIUS_SHM, BENNU_MU,
-    StateVector, load, fix_bennu_parent,
+    BENNU_BSP_FILE, BENNU_MU, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE, Plant,
+    REF_RADIUS_SHM, StateVector, fix_bennu_parent, load,
 };
 use dynamics::gravity::gravity::SphericalHarmonics;
 use dynamics::integrators::rk4::rk4;
@@ -28,7 +28,14 @@ pub fn sim_stepper(
     Vec<EstimatorVector>,
 ) {
     // Load ephemeris files
-    let almanac = Almanac::new(BSP_FILE).unwrap().load(PCA_FILE).unwrap().load(BENNU_BSP_FILE).unwrap().load(BENNU_PCA_FILE).unwrap();
+    let almanac = Almanac::new(BSP_FILE)
+        .unwrap()
+        .load(PCA_FILE)
+        .unwrap()
+        .load(BENNU_BSP_FILE)
+        .unwrap()
+        .load(BENNU_PCA_FILE)
+        .unwrap();
     let almanac = fix_bennu_parent(almanac);
 
     let harmonics = load();
@@ -62,7 +69,7 @@ pub fn sim_stepper(
             dt,
             x,
         );
-        println!("{x}");
+        // println!("{x}");
         // Sensor update based on state
         let sensor_n = sensor_dynamics(x);
 
