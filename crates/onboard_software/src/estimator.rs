@@ -7,6 +7,7 @@ pub struct Estimator {
     x: EstimatorVector,
     p: SMatrix<f64, EST_STATES, EST_STATES>,
     process_noise: SMatrix<f64, EST_STATES, EST_STATES>,
+
 }
 
 impl Estimator {
@@ -18,7 +19,10 @@ impl Estimator {
         }
     }
 
-    pub fn initialize(&self, sensor_data: SensorVector) {}
+    pub fn initialize(&self, sensor_data: SensorVector) {
+
+        self.x = sensor_data
+    }
 
     pub fn get_estimate(&self) -> EstimatorVector {
         self.x
@@ -28,7 +32,12 @@ impl Estimator {
         self.p
     }
 
-    pub fn predict(&mut self) {}
+    pub fn predict(&mut self) {
 
-    pub fn update(&mut self, sensor_data: SensorVector) {}
+    }
+
+    pub fn update(&mut self, sensor_data: SensorVector) {
+
+
+    }
 }
