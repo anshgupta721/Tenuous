@@ -2,13 +2,14 @@ use anise::prelude::*;
 use hifitime::{Epoch, Unit};
 
 use crate::config::{
-    BENNU_BSP_FILE, BENNU_MU, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE, Plant,
-    REF_RADIUS_SHM, StateVector, fix_bennu_parent, load,
+    BENNU_BSP_FILE, BENNU_MU, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE,
+    REF_RADIUS_SHM, fix_bennu_parent, load,
 };
+use crate::plant::{Plant, StateVector};
 use dynamics::gravity::gravity::SphericalHarmonics;
 use dynamics::integrators::rk4::rk4;
 use onboard_software::config::{EstimatorVector, SensorVector};
-use onboard_software::control_stack::ControlStack;
+use onboard_software::estimator::Estimator;
 
 pub fn sensor_dynamics(x: StateVector) -> SensorVector {
     x
@@ -20,7 +21,7 @@ pub fn sim_stepper(
     // u_0: ControlVector,
     t_span: [f64; 2],
     dt: f64,
-    mut gnc: ControlStack,
+    mut navigation: Estimator,
 ) -> (
     Vec<f64>,
     Vec<StateVector>,
@@ -50,7 +51,7 @@ pub fn sim_stepper(
     let mut x = x_0;
     // let mut u = u_0;
     let sensor_0 = sensor_dynamics(x);
-    gnc.estimator.initialize(sensor_0);
+    navigation.initialize(sensor_0);
 
     let n_steps: usize = ((t_span[1] - t_span[0]) / dt).ceil() as usize + 1;
     let mut t_hist = Vec::with_capacity(n_steps);
@@ -74,8 +75,8 @@ pub fn sim_stepper(
         let sensor_n = sensor_dynamics(x);
 
         // Kalman Update/Predict
-        gnc.estimator.predict();
-        gnc.estimator.update(sensor_n);
+        navigation.predict(t, dt);
+        navigation.update(sensor_n);
 
         // Feeding estimated state into controller for controller update
         // let estimator_n = gnc.estimator.get_estimate();
@@ -87,7 +88,7 @@ pub fn sim_stepper(
         t_hist.push(t);
         x_hist.push(x);
         // u_hist.push(u);
-        est_hist.push(gnc.estimator.get_estimate());
+        est_hist.push(navigation.get_estimate());
     }
     (t_hist, x_hist, est_hist)
 }

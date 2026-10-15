@@ -1,12 +1,14 @@
 use hifitime::Epoch;
+use nalgebra::SMatrix;
 use numpy::ndarray::Array2;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use pyo3::prelude::*;
 use std::str::FromStr;
 
-use onboard_software::config::{ControlVector, EST_STATES, NU};
-use onboard_software::control_stack::ControlStack;
-use simulation::config::{NX, StateVector};
+use onboard_software::config::{EST_STATES, EstimatorVector};
+use onboard_software::estimator::Estimator;
+use simulation::config::NX;
+use simulation::plant::StateVector;
 use simulation::stepper::sim_stepper;
 
 #[pyfunction]
@@ -30,14 +32,18 @@ pub fn pysim_runner<'py>(
     let x_0 = StateVector::from_row_slice(x_0_slice);
     // let u_0 = ControlVector::from_row_slice(u_0.as_slice()?);
     // Instantiate the control stack
-    let gnc: ControlStack = ControlStack::new(/*Configure the estimator here in future*/);
+    // let gnc: ControlStack = ControlStack::new(/*Configure the estimator here in future*/);
+    let navigation: Estimator = Estimator::new(
+        EstimatorVector::zeros(),
+        SMatrix::<f64, EST_STATES, EST_STATES>::zeros(),
+    );
 
     // Convert the &str from python into an hifitime::Epoch type
     let epoch_0 = Epoch::from_str(epoch_0)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("invalid epoch: {e}")))?;
 
     // run the stepper
-    let (t_hist, x_hist, est_hist) = sim_stepper(epoch_0, x_0, t_span, dt, gnc);
+    let (t_hist, x_hist, est_hist) = sim_stepper(epoch_0, x_0, t_span, dt, navigation);
     let t_arr = t_hist.into_pyarray(py).into();
     // Take t_hist vector and vectors of nalgebra arrays (x_hist and u_hist) and convert them to numpy arrays
     let n1 = x_hist.len();

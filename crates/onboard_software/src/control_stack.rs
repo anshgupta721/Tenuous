@@ -3,14 +3,14 @@
 
 // pub struct ControlStack {
 //     pub estimator: Estimator,
-//     pub controller: Controller,
+//     // pub controller: Controller,
 // }
 
-// impl ControlStack {
-//     pub fn new() -> ControlStack {
+// impl<EST_STATES> ControlStack {
+//     pub fn new(initial_state_guess: EstimatorVector, initial_state_covariance: SMatrix<f64, EST_STATES, EST_STATES>) -> ControlStack {
 //         ControlStack {
-//             estimator: Estimator::new(),
-//             controller: Controller::new(),
+//             estimator: Estimator::new(initial_state_guess, initial_state_covariance),
+//             // controller: Controller::new(),
 //         }
 //     }
 // }

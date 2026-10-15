@@ -2,11 +2,8 @@ use anise::frames::Frame;
 
 use anise::constants::{frames::SUN_J2000, orientations};
 use anise::prelude::*;
-use nalgebra::{SMatrix, SVector};
-
-use dynamics::forces::srp::srp_acceleration;
-use dynamics::gravity::gravity::GravityField;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
+use nalgebra::{SMatrix, SVector};
 
 // use dynamics::models::state_space_model::{LTVSystem, StateSpace};
 /// This file contains the simulation configuration for the plant dynamics configuration
@@ -136,4 +133,3 @@ pub fn load() -> HarmonicCoeffs {
     }
     harmonics
 }
-
