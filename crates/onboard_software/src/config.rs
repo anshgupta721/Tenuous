@@ -34,7 +34,15 @@ impl Navigation {
     }
 
     // Linearizes the non-linear measurement function around the current predicted state
-    pub fn observation_jacobian() -> SMatrix<f64, MEASUREMENTS, EST_STATES> {
+    pub fn observation_jacobian(&self, mean: EstimatorVector) -> SMatrix<f64, MEASUREMENTS, EST_STATES> {
         SMatrix::<f64, MEASUREMENTS, EST_STATES>::zeros()
+    }
+
+    pub fn process_noise_jacobian(&self, mean: EstimatorVector) -> SMatrix<f64, EST_STATES, EST_STATES> {
+        SMatrix::<f64, EST_STATES, EST_STATES>::zeros()
+    }
+
+    pub fn measurement_noise_jacobian(&self, mean: EstimatorVector) -> SMatrix<f64, MEASUREMENTS, MEASUREMENTS> {
+        SMatrix::<f64, MEASUREMENTS, MEASUREMENTS>::zeros()
     }
 }

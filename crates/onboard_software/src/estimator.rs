@@ -42,7 +42,16 @@ impl Estimator {
     pub fn predict(&mut self, t: f64, dt: f64) {
         let m_dot = self.nav.system_dynamics(t, self.x);
         self.x += m_dot * dt;
+        let system_jacobian = self.nav.system_jacobian(t, self.x);
+        self.p_own = system_jacobian * self.p_own * system_jacobian.transpose(); // not done
     }
 
-    pub fn update(&mut self, sensor_data: SensorVector) {}
+    pub fn update(&mut self, sensor_data: SensorVector) {
+        let mz = self.nav.observation(self.x);
+        let observation_jacobian = self.nav.observation_jacobian(self.x);
+        let pxz = self.p_own * observation_jacobian.transpose(); // m x n matrix
+        let pzz = observation_jacobian * self.p_own * observation_jacobian.transpose(); // not done
+        let kalman_gain = pxz * self.p_vv.try_inverse().expect("P_zz is singular");
+        self.x = self.x + kalman_gain * (sensor_data - mz);
+    }
 }
