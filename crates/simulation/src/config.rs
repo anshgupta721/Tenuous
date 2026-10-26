@@ -17,7 +17,7 @@ pub const BENNU_PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/benn
 
 pub const NX: usize = 6;
 
-pub const BENNU_MU: f64 = 4.89044967462e-09; // km^3 / s^2
+pub const BENNU_MU: f64 = 4.89044967462; // m^3 / s^2
 
 pub const INER_FRAME: Frame = Frame::new(2101955, orientations::J2000);
 pub const SUN_FRAME: Frame = SUN_J2000;
@@ -33,12 +33,12 @@ pub fn fix_bennu_parent(mut almanac: Almanac) -> Almanac {
     almanac
 }
 
-pub const REF_RADIUS_SHM: f64 = 0.29;
+pub const REF_RADIUS_SHM: f64 = 290.0;
 
-const SHM_DEGREE: usize = 10;
+pub const SHM_DEGREE: usize = 10;
 
 pub const SC_MASS: f64 = 1500.0; // kg
-pub const SC_CS_AREA: f64 = 2e-5; // km^2
+pub const SC_CS_AREA: f64 = 20.0; // m^2 changed
 pub const SC_REFLECTIVITY: f64 = 1.4;
 
 // Chesley's Coefficients

@@ -11,3 +11,5 @@ onboard_software = { version = "0.1.0", path = "../onboard_software" }
 anise.workspace = true
 hifitime.workspace = true
 der = "0.8.2"
+rand = "0.10.3"
+rand_chacha = "0.10.0"

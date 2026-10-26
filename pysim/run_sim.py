@@ -38,22 +38,31 @@ OUTPUT_CSV = "sim_output.csv"
 if __name__ == "__main__":
     epoch_0 = "2019-07-15T11:23:27.30 UTC"
     x_0 = np.array([
-        1.28237, 0, 0,
-        0, 0.0000617543738092, 0,
+        1282.37, 0, 0,
+        0, 0.0617543738092, 0,
     ])
-    t, states, _ = pysim_runner(epoch_0, x_0, (0.0, 130474.456227), 60)
+    t, states, estimated_states = pysim_runner(
+        epoch_0, x_0, (0.0, 130474.456227), 10
+    )
 
     state_names = ["x", "y", "z", "x_dot", "y_dot", "z_dot"]
     state_units = ["km", "km", "km", "km/s", "km/s", "km/s"]
     state_fig, state_axes = plt.subplots(3, 2, sharex=True, figsize=(12, 8))
     for index, state_axis in enumerate(state_axes.flat):
-        state_axis.plot(t, states[:, index])
+        state_axis.plot(t, states[:, index], label="True")
+        state_axis.plot(
+            t,
+            estimated_states[:, index],
+            linestyle="--",
+            label="Estimated",
+        )
         state_axis.set_title(state_names[index])
         state_axis.set_ylabel(state_units[index])
         state_axis.grid(True, alpha=0.3)
 
     state_axes[-1, 0].set_xlabel("Time (s)")
     state_axes[-1, 1].set_xlabel("Time (s)")
+    state_axes[0, 0].legend()
     state_fig.suptitle("Simulation State History")
     state_fig.tight_layout()
 
@@ -76,6 +85,8 @@ if __name__ == "__main__":
         axis.view_init(elev=elev, azim=azim, roll=0.0)
     fig.tight_layout()
     fig.canvas.mpl_connect('motion_notify_event', disable_vert_rotation)
+
+
     plt.show()
 
 
