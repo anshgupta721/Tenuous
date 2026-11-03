@@ -2,6 +2,12 @@ use nalgebra::{SMatrix, SVector};
 
 use crate::config::{EST_STATES, EstimatorVector};
 
+pub struct Models {
+    pub pos_vel: LinearMeasurement<6>,
+    // pub range: RangeToCenter, // MeasurementModel<1>
+}
+
+
 pub trait MeasurementModel<const M: usize> {
     /// h(x) function
     fn predict(&self, m_x: &EstimatorVector) -> SVector<f64, M>;
