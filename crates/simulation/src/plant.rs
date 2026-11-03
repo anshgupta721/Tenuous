@@ -1,10 +1,12 @@
 use anise::constants::{frames::SUN_J2000, orientations};
 use anise::frames::Frame;
 use anise::prelude::*;
+use rand::SeedableRng;
+use rand_chacha::ChaCha12Rng;
 
 use nalgebra::{SMatrix, SVector};
 
-use crate::config::{INER_FRAME, NX};
+use crate::config::INER_FRAME;
 use crate::helper::jacobian;
 
 use dynamics::forces::srp::srp_acceleration;
@@ -13,6 +15,7 @@ use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 // This simulations statevector:
 
 //[x, y, z, x_dot, y_dot, z_dot]
+pub const NX: usize = 6;
 pub type StateVector = SVector<f64, NX>;
 
 pub struct Plant {
@@ -51,6 +54,7 @@ impl Plant {
             .translate(SUN_J2000, INER_FRAME, epoch, None)
             .unwrap()
             .radius_km;
+
         let (accel, _) = self
             .gravity
             .acceleration_and_gradient(pos_body_fixed, &self.coeffs);
