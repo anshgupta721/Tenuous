@@ -3,15 +3,17 @@ use anise::prelude::*;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 
 use onboard_software::config::{EstimatorMatrix, EstimatorVector};
+use onboard_software::ekf::BaseEKF;
 use onboard_software::filter::{Context, Filter};
 use onboard_software::independent_swarm::IndependentSwarm;
-use onboard_software::measurements::{Models, LinearMeasurement};
+use onboard_software::measurements::{LinearMeasurement, Models};
 use onboard_software::swarm_navigation::SwarmNavigation;
-use onboard_software::ekf::BaseEKF;
-
 
 use crate::plant::StateVector;
-use crate::sensors::{SensorID, Sensor, SpacecraftSuite, SwarmSensors, PosVelSensor, sensor_rng_generator, POS_SIGMA, VEL_SIGMA};
+use crate::sensors::{
+    POS_SIGMA, PosVelSensor, Sensor, SensorID, SpacecraftSuite, SwarmSensors, VEL_SIGMA,
+    sensor_rng_generator,
+};
 use crate::world::World;
 
 pub struct History {
@@ -56,7 +58,6 @@ pub fn run<F: Filter, SwrmNav: SwarmNavigation<F>>(
         let meas = sensors.measurements(&world.crafts);
         // let y: Vec<SensorVector> = meas.iter.map(|per_craft| )
 
-
         // Each spacecraft should estimate
         filter.predict(epoch, dt, ctx);
         history.cov.extend(filter.covariance());
@@ -79,7 +80,7 @@ pub fn sim_stepper(
     epoch_0: Epoch,
     x_0: Vec<StateVector>,
     est_x_0: Vec<EstimatorVector>,
-    p_0: Vec<EstimatorMatrix>, 
+    p_0: Vec<EstimatorMatrix>,
     q: Vec<EstimatorMatrix>,
     t_span: [f64; 2],
     dt: f64,
@@ -104,5 +105,12 @@ pub fn sim_stepper(
 
     let mut navigation = IndependentSwarm::<BaseEKF>::new(est_x_0, p_0, q);
 
-    run(&mut world, &mut swarm, &mut navigation, &models, t_span[1], dt)
+    run(
+        &mut world,
+        &mut swarm,
+        &mut navigation,
+        &models,
+        t_span[1],
+        dt,
+    )
 }

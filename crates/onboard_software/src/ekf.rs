@@ -6,12 +6,12 @@ use nalgebra::{SMatrix, SVector};
 use anise::frames::Frame;
 use anise::prelude::*;
 
-use crate::filter::{Context, Filter};
-use crate::measurements::MeasurementModel;
 use crate::config::{
     AugmentedVector, EST_MAT_LENGTH, EST_STATES, EstimatorMatrix, EstimatorVector, FIXED_FRAME,
     INER_FRAME, MU_BENNU_GUESS, REF_RADIUS_SHM, SHM_DEGREE,
 };
+use crate::filter::{Context, Filter};
+use crate::measurements::MeasurementModel;
 // use dynamics::models::state_space_model::{LTVSystem, StateSpace};
 
 fn stack_state_and_stm(
@@ -47,7 +47,6 @@ pub struct BaseEKF {
 }
 
 impl BaseEKF {
-
     // pub fn initialize(
     //     &mut self,
     //     sensor_data: SensorVector,
@@ -159,7 +158,12 @@ impl Filter for BaseEKF {
         );
 
         let f = |time: f64, vec: AugmentedVector| {
-            self.augmented_dynamics(vec, epoch + time * Unit::Second, ctx.almanac, &ctx.harmonics)
+            self.augmented_dynamics(
+                vec,
+                epoch + time * Unit::Second,
+                ctx.almanac,
+                &ctx.harmonics,
+            )
         };
         let (mx_next, phi) = split_state_and_stm(rk4(&f, 0.0, dt, vec0));
         // println!("{:?}", phi.determinant());

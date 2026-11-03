@@ -7,7 +7,6 @@ pub struct Models {
     // pub range: RangeToCenter, // MeasurementModel<1>
 }
 
-
 pub trait MeasurementModel<const M: usize> {
     /// h(x) function
     fn predict(&self, m_x: &EstimatorVector) -> SVector<f64, M>;
