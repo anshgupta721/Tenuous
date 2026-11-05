@@ -169,7 +169,7 @@ impl Filter for BaseEKF {
         // println!("{:?}", phi.determinant());
         let noise_jacobian = self.process_noise_jacobian();
         let discrete_process_noise =
-            noise_jacobian * self.process_noise * noise_jacobian.transpose() * dt;
+            noise_jacobian * self.process_noise * noise_jacobian.transpose() * dt; // Potentially upgrade to rk4
 
         self.mx = mx_next;
         self.p_own = phi * self.p_own * phi.transpose() + discrete_process_noise;

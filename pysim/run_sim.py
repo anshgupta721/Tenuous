@@ -13,6 +13,26 @@ from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module
 
 OUTPUT_CSV = "sim_output.csv"
 
+# def run_monte_carlo(n_runs, epoch_0, x_0, P0, Q0, harmonics, t_span, dt, base_seed=0):
+#     n_craft = x_0.shape()[0]
+#     p_0 = np.repeat(P0[None], n_craft, axis=0)
+#     q = np.repeat(Q0[None], n_craft, axis=0)
+#     errors, sigmas, nees = [], [], []
+
+#     for r in range(n_runs):
+#         seed = base_seed + r
+#         rng = np.random.default_rng(seed)
+#         # Vary the estimated states
+#         est_x_0 = x_0 + rng.multivariate_normal(np.zeros(6), P0, size=n_craft)
+
+#         t, states, estimated_states, covariance = pysim_runner(epoch_0, x_0, est_x_0, p_0, q, harmonics, t_span, seed)
+
+#         post = covariance[1::2]
+
+
+
+#     return t, np.stack
+
 if __name__ == "__main__":
     epoch_0 = "2019-07-15T11:23:27.30 UTC"
     x_0 = np.array([
@@ -25,13 +45,12 @@ if __name__ == "__main__":
     p_0 = np.repeat(p_0[None], n_craft, axis=0)
     I = np.eye(3)
 
+
+    Q0 = np.zeros((6, 6))
+    Q0[:3, :3] = 1e-7**2 * np.eye(3)
+    q = np.repeat(Q0[None], n_craft, axis=0)
     dt = 10
-    q = 1e-7**2 * np.block([
-        [dt**3/3 * I, dt**2/2 * I],
-        [dt**2/2 * I, dt * I]
-    ])
-    q = np.asarray(q, dtype=np.float64)
-    q = np.repeat(q[None], n_craft, axis=0)
+   
     harmonics = "pysim/chesley_coeffs.csv"
     if p_0.ndim == 2: p_0 = p_0[None]                        # (n_craft, n, n)
     if q.ndim == 2:   q = q[None]
