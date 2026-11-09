@@ -2,80 +2,74 @@
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+
+from config import PlotConfig, SimConfig
+from plots.orbit_3d import plot_orbit_3d
+from plots.state_history import plot_state_history
+from plots.three_sigma import plot_three_sigma_sawtooth
+
 from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module
 
 
-def set_axes_equal(ax):
-    """
-    Make axes of 3D plot have equal scale so that spheres appear as spheres,
-    cubes as cubes, etc.
-
-    Input
-      ax: a matplotlib axis, e.g., as output from plt.gca().
-    """
-
-    x_limits = ax.get_xlim3d()
-    y_limits = ax.get_ylim3d()
-    z_limits = ax.get_zlim3d()
-
-    x_range = abs(x_limits[1] - x_limits[0])
-    x_middle = np.mean(x_limits)
-    y_range = abs(y_limits[1] - y_limits[0])
-    y_middle = np.mean(y_limits)
-    z_range = abs(z_limits[1] - z_limits[0])
-    z_middle = np.mean(z_limits)
-
-    # The plot bounding box is a sphere in the sense of the infinity
-    # norm, hence I call half the max range the plot radius.
-    plot_radius = 0.5*max([x_range, y_range, z_range])
-
-    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
-
 OUTPUT_CSV = "sim_output.csv"
+
+# def run_monte_carlo(n_runs, epoch_0, x_0, P0, Q0, harmonics, t_span, dt, base_seed=0):
+#     n_craft = x_0.shape()[0]
+#     p_0 = np.repeat(P0[None], n_craft, axis=0)
+#     q = np.repeat(Q0[None], n_craft, axis=0)
+#     errors, sigmas, nees = [], [], []
+
+#     for r in range(n_runs):
+#         seed = base_seed + r
+#         rng = np.random.default_rng(seed)
+#         # Vary the estimated states
+#         est_x_0 = x_0 + rng.multivariate_normal(np.zeros(6), P0, size=n_craft)
+
+#         t, states, estimated_states, covariance = pysim_runner(epoch_0, x_0, est_x_0, p_0, q, harmonics, t_span, seed)
+
+#         post = covariance[1::2]
+
+
+
+#     return t, np.stack
 
 if __name__ == "__main__":
     epoch_0 = "2019-07-15T11:23:27.30 UTC"
     x_0 = np.array([
-        1.28237, 0, 0,
-        0, 0.0000617543738092, 0,
-    ])
-    t, states, _ = pysim_runner(epoch_0, x_0, (0.0, 130474.456227), 60)
+        [1282.37, 0.0, 0.0, 0.0, 0.0617543738092, 0.0],
+        [0.0, 1282.37, 0.0, -0.0617543738092, 0.0, 0.0]])
+    x_0 = np.atleast_2d(np.asarray(x_0, dtype=np.float64))
+    n_craft = x_0.shape[0]
+    p_0 = np.diag([2**2, 2**2, 2**2, .00003**2, .00003**2, .00003**2])
+    p_0 = np.asarray(p_0, dtype=np.float64)
+    p_0 = np.repeat(p_0[None], n_craft, axis=0)
+    I = np.eye(3)
 
-    state_names = ["x", "y", "z", "x_dot", "y_dot", "z_dot"]
-    state_units = ["km", "km", "km", "km/s", "km/s", "km/s"]
-    state_fig, state_axes = plt.subplots(3, 2, sharex=True, figsize=(12, 8))
-    for index, state_axis in enumerate(state_axes.flat):
-        state_axis.plot(t, states[:, index])
-        state_axis.set_title(state_names[index])
-        state_axis.set_ylabel(state_units[index])
-        state_axis.grid(True, alpha=0.3)
 
-    state_axes[-1, 0].set_xlabel("Time (s)")
-    state_axes[-1, 1].set_xlabel("Time (s)")
-    state_fig.suptitle("Simulation State History")
-    state_fig.tight_layout()
+    Q0 = np.zeros((6, 6))
+    Q0[:3, :3] = 1e-7**2 * np.eye(3)
+    q = np.repeat(Q0[None], n_craft, axis=0)
+    dt = 10
+   
+    harmonics = "pysim/chesley_coeffs.csv"
+    if p_0.ndim == 2: p_0 = p_0[None]                        # (n_craft, n, n)
+    if q.ndim == 2:   q = q[None]
 
-    fig = plt.figure(figsize=(10, 8))
-    axis = fig.add_subplot(111, projection="3d")
-    axis.plot(states[:, 0], states[:, 1], states[:, 2], label="Spacecraft orbit")
-    axis.scatter(*states[0, :3], color="green", s=50, label="Start")
-    axis.scatter(*states[-1, :3], color="red", s=50, label="End")
-    axis.set_title("3D Orbit")
-    axis.set_xlabel("x (km)")
-    axis.set_ylabel("y (km)")
-    axis.set_zlabel("z (km)")
-    axis.set_box_aspect((1, 1, 1))
-    axis.legend()
-    set_axes_equal(axis)
-    def disable_vert_rotation(_event):
-        """Keep the 3D plot's vertical rotation disabled."""
-        azim = axis.azim
-        elev = axis.elev
-        axis.view_init(elev=elev, azim=azim, roll=0.0)
-    fig.tight_layout()
-    fig.canvas.mpl_connect('motion_notify_event', disable_vert_rotation)
+    t, states, estimated_states, covariance = pysim_runner(
+        epoch_0, x_0, x_0, p_0, q, harmonics, (0.0, 200000), 10, 42
+    )
+
+    plots = PlotConfig(length_unit="m")
+
+
+
+    plot_orbit_3d(states, (10, 8), plots)
+    n_craft = states.shape[1]
+    for c in range(n_craft):
+        plot_state_history(t, states, estimated_states, plots, craft=c)
+        plot_three_sigma_sawtooth(t, states, estimated_states, covariance, plots, (12, 8), craft=c)
+
+
     plt.show()
 
 
