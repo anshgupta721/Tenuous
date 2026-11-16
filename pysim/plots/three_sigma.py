@@ -15,40 +15,44 @@ def _to_sigma(covariances):
     raise ValueError(f"covariances must be (N, n, n) or (N, n); got {covariances.shape}")
 
 
-def plot_three_sigma_sawtooth(t, states, estimated_states, covariances, cfg: PlotConfig, fig_size: tuple, n_sigma=3.0, indices=None, ncols=2, craft=0):
-    indices = list(range(len(cfg.state_names))) if indices is None else list(indices)
-
+def plot_error_sigma(t, error, sigma, labels, units, fig_size,
+                     n_sigma=3.0, ncols=2, title=""):
+    """error: (T, k); sigma: (2T, k) interleaved [predict, update, ...]."""
     t = np.asarray(t)
-
-    # states / estimates are (T, n_craft, n): pick one craft -> (T, n)
-    states = states[:, craft]
-    estimated_states = estimated_states[:, craft]
-
-    # covariances arrive interleaved [predict, update, ...]: (2T, n_craft, n, n) -> (2T, n, n)
-    covariances = np.asarray(covariances)
-    if covariances.ndim == 4:
-        covariances = covariances[:, craft]
-
-    interval = n_sigma * cfg.convert(_to_sigma(covariances))
-    if len(interval) != 2 * len(t):
-        raise ValueError(
-            f"covariance has {len(interval)} entries; expected 2 * len(t) = {2 * len(t)}"
-        )
-    error = cfg.convert(estimated_states - states)
-    t_both = np.repeat(t, 2)
+    if len(sigma) != 2 * len(t):
+        raise ValueError(f"expected {2 * len(t)} sigma rows, got {len(sigma)}")
+    interval = n_sigma * sigma
     update_interval = interval[1::2]
-    fig, axes = _grid(len(indices), ncols, fig_size)
-    label = f"±{n_sigma:g}σ (predict/update)"
-    for ax, i in zip(axes.flat, indices):
-        inside = np.mean(np.abs(error[:, i]) <= update_interval[:, i]) * 100.0
-        ax.plot(t, error[:, i], label="Error (post-update)")
-        ax.plot(t_both, interval[:, i], "C3--", label=label)
-        ax.plot(t_both, -interval[:, i], "C3--")
-        ax.fill_between(t_both, -interval[:, i], interval[:, i], color="C3", alpha=0.1)
-        ax.set_title(f"{cfg.state_names[i]} ({inside:.1f}% within update bounds)")
-        ax.set_ylabel(f"Error ({cfg.state_units[i]})")
+    t_both = np.repeat(t, 2)
+
+    fig, axes = _grid(error.shape[1], ncols, fig_size)
+    for k, ax in zip(range(error.shape[1]), axes.flat):
+        inside = np.mean(np.abs(error[:, k]) <= update_interval[:, k]) * 100.0
+        ax.plot(t, error[:, k], label="Error (post-update)")
+        ax.plot(t_both, interval[:, k], "C3--", label=f"±{n_sigma:g}σ (predict/update)")
+        ax.plot(t_both, -interval[:, k], "C3--")
+        ax.fill_between(t_both, -interval[:, k], interval[:, k], color="C3", alpha=0.1)
+        ax.set_title(f"{labels[k]} ({inside:.1f}% within update bounds)")
+        ax.set_ylabel(f"Error ({units[k]})")
         ax.grid(True, alpha=0.3)
     axes.flat[0].legend()
-    fig.suptitle(f"Estimation Error with {n_sigma:g}σ Sawtooth Bounds (craft {craft})")
+    fig.suptitle(title)
     fig.tight_layout()
     return fig
+
+def plot_state_sigma(t, states, est, cov, cfg, fig_size, craft=0, **kw):
+    err = cfg.convert(est[:, craft, :6] - states[:, craft])
+    sig = cfg.convert(_to_sigma(cov[:, craft, :6, :6]))
+    return plot_error_sigma(t, err, sig, cfg.state_names, cfg.state_units,
+                            fig_size, title=f"State error (craft {craft})", **kw)
+
+def plot_param_sigma(t, est, cov, truth_params, labels, units, fig_size,
+                     indices=None, craft=0, **kw):
+    """truth_params: (p,) true [mu, coeffs...], aligned with est[..., 6:]."""
+    idx = np.arange(len(truth_params)) if indices is None else np.asarray(indices)
+    err = est[:, craft, 6:][:, idx] - np.asarray(truth_params)[idx]
+    cov_p = cov[:, craft, 6:, 6:]
+    sig = np.sqrt(np.diagonal(cov_p, axis1=1, axis2=2))[:, idx]
+    return plot_error_sigma(t, err, sig, [labels[i] for i in idx],
+                            [units[i] for i in idx], fig_size,
+                            title=f"Parameter error (craft {craft})", **kw)

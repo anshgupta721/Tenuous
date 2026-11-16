@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from config import PlotConfig, SimConfig
 from plots.orbit_3d import plot_orbit_3d
 from plots.state_history import plot_state_history
-from plots.three_sigma import plot_three_sigma_sawtooth
+from plots.three_sigma import plot_state_sigma, plot_param_sigma
 
 from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module
 
@@ -35,18 +35,25 @@ OUTPUT_CSV = "sim_output.csv"
 
 if __name__ == "__main__":
     epoch_0 = "2019-07-15T11:23:27.30 UTC"
-    x_0 = np.array([
+    truth_x_0 = np.array([
         [1282.37, 0.0, 0.0, 0.0, 0.0617543738092, 0.0],
         [0.0, 1282.37, 0.0, -0.0617543738092, 0.0, 0.0]])
-    x_0 = np.atleast_2d(np.asarray(x_0, dtype=np.float64))
-    n_craft = x_0.shape[0]
-    p_0 = np.diag([2**2, 2**2, 2**2, .00003**2, .00003**2, .00003**2])
+    truth_x_0 = np.atleast_2d(np.asarray(truth_x_0, dtype=np.float64))
+    n_craft = truth_x_0.shape[0]
+    est_x_0 = np.array([
+        [1282.37, 0.0, 0.0, 0.0, 0.0617543738092, 0.0, 4.89044967462],
+        [0.0, 1282.37, 0.0, -0.0617543738092, 0.0, 0.0, 4.89044967462]])
+
+    sigma_mu = 0.05 * 4.89044967462
+
+    
+    p_0 = np.diag([2**2, 2**2, 2**2, .00003**2, .00003**2, .00003**2, sigma_mu**2])
     p_0 = np.asarray(p_0, dtype=np.float64)
     p_0 = np.repeat(p_0[None], n_craft, axis=0)
     I = np.eye(3)
 
 
-    Q0 = np.zeros((6, 6))
+    Q0 = np.zeros((7, 7))
     Q0[:3, :3] = 1e-7**2 * np.eye(3)
     q = np.repeat(Q0[None], n_craft, axis=0)
     dt = 10
@@ -56,7 +63,7 @@ if __name__ == "__main__":
     if q.ndim == 2:   q = q[None]
 
     t, states, estimated_states, covariance = pysim_runner(
-        epoch_0, x_0, x_0, p_0, q, harmonics, (0.0, 200000), 10, 42
+        epoch_0, truth_x_0, est_x_0, p_0, q, harmonics, (0.0, 200000), 10, 42
     )
 
     plots = PlotConfig(length_unit="m")
@@ -66,16 +73,20 @@ if __name__ == "__main__":
     plot_orbit_3d(states, (10, 8), plots)
     n_craft = states.shape[1]
     for c in range(n_craft):
-        plot_state_history(t, states, estimated_states, plots, craft=c)
-        plot_three_sigma_sawtooth(t, states, estimated_states, covariance, plots, (12, 8), craft=c)
-
+        plot_state_history(t, states, estimated_states[..., :6], plots, craft=c)
+        plot_state_sigma(t, states, estimated_states, covariance, plots, (12, 8), craft=c)
+        plot_param_sigma(
+            t, estimated_states, covariance,
+            truth_params=[4.89044967462], labels=["mu"], units=["m³/s²"],
+            fig_size=(12, 8), craft=c,
+        )
 
     plt.show()
 
 
     with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["t_s", "x_km", "y_km", "z_km", "vx_km_s", "vy_km_s", "vz_km_s"])
+        writer.writerow(["t_s", "x_m", "y_m", "z_m", "vx_m_s", "vy_m_s", "vz_m_s"])
         for t_i, row in zip(t, states):
             writer.writerow([t_i, *row])
 
