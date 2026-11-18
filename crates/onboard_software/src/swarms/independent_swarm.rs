@@ -2,15 +2,15 @@ use anise::prelude::*;
 use nalgebra::SVector;
 
 use crate::config::{EstimatorMatrix, EstimatorVector};
-use crate::filter::{Context, Filter};
+use crate::filters::filter::{Context, Filter};
 use crate::measurements::MeasurementModel;
-use crate::swarm_navigation::SwarmNavigation;
+use crate::swarms::swarm_navigation::SwarmNavigation;
 
 pub struct IndependentSwarm<F> {
     filters: Vec<F>,
 }
 
-impl<F: Filter> SwarmNavigation<F> for IndependentSwarm<F> {
+impl<F: Filter> SwarmNavigation for IndependentSwarm<F> {
     fn new(
         initial_estimates: Vec<EstimatorVector>,
         initial_covariances: Vec<EstimatorMatrix>,
@@ -28,9 +28,9 @@ impl<F: Filter> SwarmNavigation<F> for IndependentSwarm<F> {
         Self { filters }
     }
 
-    fn predict(&mut self, epoch: Epoch, dt: f64, ctx: Context) {
+    fn predict(&mut self, epoch: Epoch, dt: f64, almanac: &Almanac) {
         for i in self.filters.iter_mut() {
-            F::predict(i, epoch, dt, &ctx);
+            F::predict(i, epoch, dt, almanac);
         }
     }
 
