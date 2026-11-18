@@ -4,7 +4,6 @@ use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 
 use onboard_software::config::{EstimatorMatrix, EstimatorVector};
 use onboard_software::filters::ekf::BaseEKF;
-use onboard_software::filters::filter::Context;
 use onboard_software::swarms::independent_swarm::IndependentSwarm;
 use onboard_software::measurements::{LinearMeasurement, Models};
 use onboard_software::swarms::swarm_navigation::SwarmNavigation;
@@ -17,21 +16,35 @@ use crate::sensors::{
 use crate::world::World;
 
 pub struct History {
-    pub n_craft: usize,
+    // pub n_craft: usize,
     pub t: Vec<f64>,
     pub truth: Vec<StateVector>, // [step][craft][NX]       Spacecraft1-tk(x, y, z, vx, vy, vz)----
     pub est: Vec<EstimatorVector>, // [step][craft][EST_STATES]
-    pub cov: Vec<EstimatorMatrix>, // [step][craft][predict/update][row][col]
+    pub var: Vec<EstimatorVector>, // [step][craft][update][row][col]
+    pub nees_sc: Vec<f64>,         // [step][craft]
+    pub nees_grav_par: Vec<f64>,        // [step][craft]
+    pub nees_full: Vec<f64>,
+    pub snap_idx: Vec<usize>,           // step indices where full covariances are saved
+    pub cov_snap: Vec<EstimatorMatrix>, // snap_idx.len() * n_craft, post-update
+    pub cov_full: Vec<EstimatorMatrix>, // interleaved predict/update, only if full_cov is true
+
 }
 
 impl History {
     pub fn with_capacity(steps: usize, n_craft: usize) -> Self {
         Self {
-            n_craft,
+            // n_craft,
             t: Vec::with_capacity(steps),
             truth: Vec::with_capacity(steps * n_craft),
             est: Vec::with_capacity(steps * n_craft),
-            cov: Vec::with_capacity(steps * n_craft),
+            var: Vec::with_capacity(steps * n_craft),
+            nees_sc: Vec::with_capacity(steps * n_craft),
+            nees_par: Vec::with_capacity(steps * n_craft),
+            nees_full: Vec::with_capacity(steps * n_craft),
+            snap_idx: Vec::new(),
+            cov_snap: Vec::new(),
+            cov_full: Vec::new(),
+
         }
     }
 }
@@ -39,7 +52,7 @@ impl History {
 pub fn run<SwrmNav: SwarmNavigation>(
     world: &mut World,
     sensors: &mut SwarmSensors,
-    filter: &mut SwrmNav,
+    swarm_navigation: &mut SwrmNav,
     models: &Models,
     t_end: f64,
     dt: f64,
@@ -49,20 +62,15 @@ pub fn run<SwrmNav: SwarmNavigation>(
     for _ in 0..n {
         // Propagate all spacecraft from n to n+1
         let epoch = world.step(dt);
-        let ctx: Context = Context {
-            almanac: &world.almanac,
-            harmonics: &world.harmonics,
-        };
 
         // Generate measurements for each spacecraft
         let meas = sensors.measurements(&world.crafts);
         // let y: Vec<SensorVector> = meas.iter.map(|per_craft| )
 
-        // Each spacecraft should estimate
-        filter.predict(epoch, dt, &world.almanac);
-        history.cov.extend(filter.covariance());
-        filter.correct(&models.pos_vel, &meas);
-        history.cov.extend(filter.covariance());
+        // Propagate every spacecraft forward and add their value to 
+        swarm_navigation.predict(epoch, dt, &world.almanac);
+        swarm_navigation.correct(&models.pos_vel, &meas);
+        history.var.extend(swarm_navigation.covariance().diag());
 
         // Save data from each spacecraft
         history.t.push(world.t);
@@ -85,6 +93,7 @@ pub fn sim_stepper(
     t_span: [f64; 2],
     dt: f64,
     harmonics: HarmonicCoeffs,
+    save_every: f64,
     seed: u64,
 ) -> History {
     let mut world = World::new(epoch_0, &x_0, t_span[0], seed, harmonics);

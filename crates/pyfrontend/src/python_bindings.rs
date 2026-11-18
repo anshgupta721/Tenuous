@@ -35,7 +35,7 @@ fn to_est_matrix(name: &str, array: &PyReadonlyArray3<f64>) -> PyResult<Vec<Esti
 
 /// This function will return a time array, simulation truth state vector array, and estimator array
 #[pyfunction]
-#[pyo3(signature = (epoch_0, true_x_0, est_x_0, p_0, q, harmonics, t_span, dt, seed))]
+#[pyo3(signature = (epoch_0, true_x_0, est_x_0, p_0, q, harmonics, t_span, dt, save_every, seed))]
 pub fn pysim_runner<'py>(
     py: Python<'py>,
     epoch_0: &str,
@@ -46,6 +46,7 @@ pub fn pysim_runner<'py>(
     harmonics: &str,
     t_span: [f64; 2],
     dt: f64,
+    save_every: f64,
     seed: u64,
 ) -> PyResult<(
     Py<PyArray1<f64>>, // Time
@@ -95,7 +96,7 @@ pub fn pysim_runner<'py>(
         .map_err(|e| PyValueError::new_err(format!("failed to load harmonic coefficients: {e}")))?;
     // run the stepper
     let history = sim_stepper(
-        epoch_0, true_x_0, est_x_0, p_0, q, t_span, dt, harmonics, seed,
+        epoch_0, true_x_0, est_x_0, p_0, q, t_span, dt, harmonics, save_every, seed,
     );
     let n_steps = history.t.len();
     let t_arr = history.t.into_pyarray(py).into();
