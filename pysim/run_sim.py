@@ -7,31 +7,56 @@ from config import PlotConfig, SimConfig
 from plots.orbit_3d import plot_orbit_3d
 from plots.state_history import plot_state_history
 from plots.three_sigma import plot_state_sigma, plot_param_sigma
+from gravity_field import load_gravity_field
+from scipy.linalg import block_diag
 
 from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module
 
 
 OUTPUT_CSV = "sim_output.csv"
 
-# def run_monte_carlo(n_runs, epoch_0, x_0, P0, Q0, harmonics, t_span, dt, base_seed=0):
-#     n_craft = x_0.shape()[0]
-#     p_0 = np.repeat(P0[None], n_craft, axis=0)
-#     q = np.repeat(Q0[None], n_craft, axis=0)
-#     errors, sigmas, nees = [], [], []
+def run_monte_carlo(n_runs, epoch_0, x_0, sc_P0, Q0, mu, grav_p0, harmonics, estimated_degree, t_span, dt, save_every, base_seed=0):
+    n_craft = x_0.shape[0]
+    CRAFT_STATES = x_0.shape[0][0]
+    GRAV_STATES = grav_p0.shape[0]
+    sc_p0 = np.repeat(sc_P0[None], n_craft, axis=0)
+    grav_p0 = np.repeat(grav_p0[None], n_craft, axis=0)
+    q = np.repeat(Q0[None], n_craft, axis=0)
+    errors, sigmas, nees = [], [], []
 
-#     for r in range(n_runs):
-#         seed = base_seed + r
-#         rng = np.random.default_rng(seed)
-#         # Vary the estimated states
-#         est_x_0 = x_0 + rng.multivariate_normal(np.zeros(6), P0, size=n_craft)
+    # Define the initial covariance matrices for the estimator of each spacecraft
+    p_single = np.asarray(block_diag(sc_p0, grav_p0), dtype=np.float64)
+    p_0 = np.repeat(p_single[None], n_craft, axis=0)
+    estimates, variances = [], []
+    for r in range(n_runs):
+        seed = base_seed + r
+        rng = np.random.default_rng(seed)
+        # Vary the estimated states
+        est_x_0 = x_0 + rng.multivariate_normal(np.zeros(CRAFT_STATES), sc_p0, size=n_craft)
+        # Vary the gravitational field that gets passed into each estimator, keeping the prior guess the same across spacecraft
+        estimated_gravity_field = np.concatenate(
+            (np.atleast_1d(mu), load_gravity_field(harmonics, estimated_degree))
+        )
+        gravity_field_variance = rng.multivariate_normal(np.zeros(GRAV_STATES), grav_p0)
+        estimated_gravity_field = estimated_gravity_field + gravity_field_variance
 
-#         t, states, estimated_states, covariance = pysim_runner(epoch_0, x_0, est_x_0, p_0, q, harmonics, t_span, seed)
+        # Add a estimated gravity field to each different spacecraft
+        gravity_field_columns = np.repeat(
+            estimated_gravity_field[None, :], n_craft, axis=0
+        )
+        est_x_0 = np.concatenate((est_x_0, gravity_field_columns), axis=1)
+        # Construct a uncertainty matrix for each spacecraft for each estimator
+        
+        t, states, estimated_states, covariance = pysim_runner(epoch_0, x_0, est_x_0, p_0, q, harmonics, t_span, save_every, seed)
 
-#         post = covariance[1::2]
+        post = covariance[1::2]
+        
+        estimates.append(estimated_states)
+        variances.append(np.diagonal(post, axis1=2, axis2=3))   # (T, n_craft, n)
 
 
 
-#     return t, np.stack
+    return t, np.stack
 
 if __name__ == "__main__":
     epoch_0 = "2019-07-15T11:23:27.30 UTC"
@@ -47,9 +72,8 @@ if __name__ == "__main__":
     sigma_mu = 0.05 * 4.89044967462
 
     
-    p_0 = np.diag([2**2, 2**2, 2**2, .00003**2, .00003**2, .00003**2, sigma_mu**2])
-    p_0 = np.asarray(p_0, dtype=np.float64)
-    p_0 = np.repeat(p_0[None], n_craft, axis=0)
+    sc_p_0 = np.diag([2**2, 2**2, 2**2, .00003**2, .00003**2, .00003**2, sigma_mu**2])
+    sc_p_0 = np.asarray(sc_p_0, dtype=np.float64)
     I = np.eye(3)
 
 
@@ -59,11 +83,9 @@ if __name__ == "__main__":
     dt = 10
    
     harmonics = "pysim/chesley_coeffs.csv"
-    if p_0.ndim == 2: p_0 = p_0[None]                        # (n_craft, n, n)
-    if q.ndim == 2:   q = q[None]
 
     t, states, estimated_states, covariance = pysim_runner(
-        epoch_0, truth_x_0, est_x_0, p_0, q, harmonics, (0.0, 200000), 10, 42
+        epoch_0, truth_x_0, est_x_0, sc_p_0, q, harmonics, (0.0, 200000), 10, 42
     )
 
     plots = PlotConfig(length_unit="m")
