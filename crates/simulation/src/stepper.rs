@@ -3,11 +3,11 @@ use anise::prelude::*;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 
 use onboard_software::config::{EstimatorMatrix, EstimatorVector};
-use onboard_software::ekf::BaseEKF;
-use onboard_software::filter::{Context, Filter};
-use onboard_software::independent_swarm::IndependentSwarm;
+use onboard_software::filters::ekf::BaseEKF;
+use onboard_software::filters::filter::Context;
+use onboard_software::swarms::independent_swarm::IndependentSwarm;
 use onboard_software::measurements::{LinearMeasurement, Models};
-use onboard_software::swarm_navigation::SwarmNavigation;
+use onboard_software::swarms::swarm_navigation::SwarmNavigation;
 
 use crate::plant::StateVector;
 use crate::sensors::{
@@ -36,7 +36,7 @@ impl History {
     }
 }
 
-pub fn run<F: Filter, SwrmNav: SwarmNavigation<F>>(
+pub fn run<SwrmNav: SwarmNavigation>(
     world: &mut World,
     sensors: &mut SwarmSensors,
     filter: &mut SwrmNav,
@@ -59,7 +59,7 @@ pub fn run<F: Filter, SwrmNav: SwarmNavigation<F>>(
         // let y: Vec<SensorVector> = meas.iter.map(|per_craft| )
 
         // Each spacecraft should estimate
-        filter.predict(epoch, dt, ctx);
+        filter.predict(epoch, dt, &world.almanac);
         history.cov.extend(filter.covariance());
         filter.correct(&models.pos_vel, &meas);
         history.cov.extend(filter.covariance());

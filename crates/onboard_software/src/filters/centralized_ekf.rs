@@ -1,13 +1,8 @@
-use anise::frames::Frame;
 use anise::prelude::*;
 use nalgebra::{DMatrix, DVector, SMatrix, SVector};
 
-use dynamics::gravity::gravity::SphericalHarmonics;
-use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
-
 use crate::config::{
-    AugmentedVector, EST_MAT_LENGTH, EST_STATES, EstimatorMatrix, EstimatorVector, FIXED_FRAME,
-    GRAV_STATES, INER_FRAME, REF_RADIUS_SHM, SC_STATES, SHM_DEGREE,
+    EstimatorMatrix, EstimatorVector, GRAV_STATES, SC_STATES,
 };
 use crate::measurements::MeasurementModel;
 use crate::propagator::GravityDynamics;
@@ -154,7 +149,7 @@ impl CentralizedEKF {
             // Observation jacobian
             let h_local = meas_model.jacobian(&local_state);
             let r = meas_model.noise(&local_state);
-            let innov = z[i] - meas_model.predict(&local_state);
+            let innov = z[i] - mz_local;
             let sc_state_index = craft_index(i);
             let row = M * i;
             let mut h = DMatrix::<f64>::zeros(M, states);

@@ -61,9 +61,10 @@ impl World {
         let almanac = fix_bennu_parent(almanac);
 
         let plant = Plant::new(
-            SphericalHarmonics::new(BENNU_MU, REF_RADIUS_SHM, SHM_DEGREE),
+            SphericalHarmonics::new(REF_RADIUS_SHM, SHM_DEGREE),
             INER_FRAME,
             FIXED_FRAME,
+            BENNU_MU,
             harmonics.clone(),
         );
 
