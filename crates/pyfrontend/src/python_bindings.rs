@@ -1,20 +1,17 @@
 use hifitime::Epoch;
 use numpy::ndarray::{Array3, Array4, Axis};
 use numpy::{
-    IntoPyArray, PyArray1, PyArray3, PyArray4, PyReadonlyArray1, PyReadonlyArray2,
-    PyReadonlyArray3, PyUntypedArrayMethods,
+    IntoPyArray, PyArray1, PyArray3, PyArray4, PyReadonlyArray2, PyReadonlyArray3,
+    PyUntypedArrayMethods,
 };
 
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 
-use onboard_software::independent_swarm::IndependentSwarm;
-use onboard_software::swarm_navigation::SwarmNavigation;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::str::FromStr;
 
 use onboard_software::config::{EST_STATES, EstimatorMatrix, EstimatorVector};
-use onboard_software::ekf::BaseEKF;
 use simulation::plant::{NX, StateVector};
 use simulation::stepper::sim_stepper;
 
@@ -81,7 +78,7 @@ pub fn pysim_runner<'py>(
     let est_x_0: Vec<EstimatorVector> = est_x_0
         .as_array()
         .axis_iter(Axis(0))
-        .map(|row| StateVector::from_row_slice(&row.to_vec()))
+        .map(|row| EstimatorVector::from_row_slice(&row.to_vec()))
         .collect();
 
     let p_0 = to_est_matrix("p_0", &p_0)?;
@@ -113,7 +110,6 @@ pub fn pysim_runner<'py>(
         .into_pyarray(py)
         .into();
 
-    let n_est = history.est.len();
     let est_flat: Vec<f64> = history
         .est
         .iter()

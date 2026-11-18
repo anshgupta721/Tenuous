@@ -1,15 +1,16 @@
 use anise::constants::{frames::SUN_J2000, orientations};
 use anise::frames::Frame;
 use anise::prelude::*;
-use rand::SeedableRng;
-use rand_chacha::ChaCha12Rng;
-
-use nalgebra::{SMatrix, SVector};
-
-use crate::config::INER_FRAME;
-use crate::helper::jacobian;
+// use rand::SeedableRng;
+// use rand_chacha::ChaCha12Rng;
 
 use dynamics::forces::srp::srp_acceleration;
+use nalgebra::{SMatrix, SVector};
+
+use crate::config::{INER_FRAME, SC_CS_AREA, SC_MASS, SC_REFLECTIVITY, SUN_MU};
+use crate::helper::jacobian;
+
+// use dynamics::forces::srp::srp_acceleration;
 use dynamics::gravity::gravity::SphericalHarmonics;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 // This simulations statevector:
@@ -18,10 +19,17 @@ use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 pub const NX: usize = 6;
 pub type StateVector = SVector<f64, NX>;
 
+fn point_mass_acceleration(mu: f64, pos_body_fixed: SVector<f64, 3>) -> SVector<f64, 3> {
+    let r = pos_body_fixed.norm();
+    let common = -mu / r.powf(3.0);
+    pos_body_fixed * common
+}
+
 pub struct Plant {
     gravity: SphericalHarmonics,
     inertial_frame: Frame,
     body_fixed_frame: Frame,
+    mu: f64,
     coeffs: HarmonicCoeffs,
 }
 
@@ -30,12 +38,14 @@ impl Plant {
         gravity: SphericalHarmonics,
         inertial_frame: Frame,
         body_fixed_frame: Frame,
+        mu: f64,
         coeffs: HarmonicCoeffs,
     ) -> Plant {
         Plant {
             gravity,
             inertial_frame,
             body_fixed_frame,
+            mu,
             coeffs,
         }
     }
@@ -55,11 +65,20 @@ impl Plant {
             .unwrap()
             .radius_km;
 
-        let (accel, _) = self
-            .gravity
-            .acceleration_and_gradient(pos_body_fixed, &self.coeffs);
+        let (bennu_grav_accel, _) =
+            self.gravity
+                .acceleration_and_gradient(pos_body_fixed, self.mu, &self.coeffs);
+
+        let bennu_grav_accel_inertial = dcm_b2i.rot_mat * bennu_grav_accel;
+        let srp_acceleration = srp_acceleration(
+            sun_pos_wrt_bennu,
+            pos_inertial,
+            SC_CS_AREA / SC_MASS,
+            SC_REFLECTIVITY,
+        );
+        let sun_grav_accel_inertial = point_mass_acceleration(SUN_MU, sun_pos_wrt_bennu);
         // Acceleration in the Bennu J2000 frame,
-        let accel_inertial = dcm_b2i.rot_mat * accel; //+ srp_acceleration(sun_pos_wrt_bennu, pos_inertial, SC_CS_AREA / SC_MASS,SC_REFLECTIVITY)
+        let accel_inertial = bennu_grav_accel_inertial; //+ srp_acceleration(sun_pos_wrt_bennu, pos_inertial, SC_CS_AREA / SC_MASS,SC_REFLECTIVITY)
         StateVector::from_row_slice(&[
             x[3],
             x[4],
@@ -83,11 +102,14 @@ impl Plant {
             .unwrap();
         let pos_body_fixed = dcm_i2b * pos_inertial;
 
-        let (_, analytic_grad) = self
-            .gravity
-            .acceleration_and_gradient(pos_body_fixed, &self.coeffs);
+        let (_, analytic_grad) =
+            self.gravity
+                .acceleration_and_gradient(pos_body_fixed, self.mu, &self.coeffs);
         let finite_difference_grad = jacobian(
-            |&p| self.gravity.acceleration_and_gradient(p, &self.coeffs),
+            |&p| {
+                self.gravity
+                    .acceleration_and_gradient(p, self.mu, &self.coeffs)
+            },
             pos_body_fixed,
             h,
         );

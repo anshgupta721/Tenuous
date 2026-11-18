@@ -18,12 +18,13 @@ pub trait Filter {
         initial_state_covariance: EstimatorMatrix,
         process_noise: EstimatorMatrix,
     ) -> Self;
-    fn predict(&mut self, epoch: Epoch, dt: f64, ctx: &Context);
+    fn predict(&mut self, epoch: Epoch, dt: f64, almanac: &Almanac);
     fn update<const M: usize, Meas: MeasurementModel<M>>(
         &mut self,
         model: &Meas,
-        y: &SVector<f64, M>,
+        z: &SVector<f64, M>,
     );
+    fn set_estimate(&mut self, x: EstimatorVector, p: EstimatorMatrix);
     fn estimate(&self) -> EstimatorVector;
     fn covariance(&self) -> EstimatorMatrix;
 }

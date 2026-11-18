@@ -394,7 +394,7 @@ checksum = "780955b8b195a21ab8e4ac6b60dd1dbdcec1dc6c51c0617964b08c81785e12c9"
 [[package]]
 name = "dynamics"
 version = "0.1.0"
-source = "git+https://github.com/anshgupta721/Azimuth.git#cc0dd1d8e460b4ba4e3f20eae188b14a21e55586"
+source = "git+https://github.com/anshgupta721/Azimuth.git#d3f79fb880dd5c9282f2ca6086e8e7cadf88d353"
 dependencies = [
  "fs",
  "nalgebra",
@@ -954,7 +954,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 [[package]]
 name = "math"
 version = "0.1.0"
-source = "git+https://github.com/anshgupta721/Azimuth.git#cc0dd1d8e460b4ba4e3f20eae188b14a21e55586"
+source = "git+https://github.com/anshgupta721/Azimuth.git#d3f79fb880dd5c9282f2ca6086e8e7cadf88d353"
 dependencies = [
  "nalgebra",
 ]
@@ -1601,7 +1601,7 @@ dependencies = [
 [[package]]
 name = "sensors"
 version = "0.1.0"
-source = "git+https://github.com/anshgupta721/Azimuth.git#cc0dd1d8e460b4ba4e3f20eae188b14a21e55586"
+source = "git+https://github.com/anshgupta721/Azimuth.git#d3f79fb880dd5c9282f2ca6086e8e7cadf88d353"
 dependencies = [
  "nalgebra",
  "rand",
