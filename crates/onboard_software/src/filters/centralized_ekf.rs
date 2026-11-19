@@ -1,9 +1,7 @@
 use anise::prelude::*;
 use nalgebra::{DMatrix, DVector, SMatrix, SVector};
 
-use crate::config::{
-    EstimatorMatrix, EstimatorVector, GRAV_STATES, SC_STATES,
-};
+use crate::config::{EstimatorMatrix, EstimatorVector, GRAV_STATES, SC_STATES};
 use crate::measurements::MeasurementModel;
 use crate::propagator::GravityDynamics;
 
@@ -44,22 +42,43 @@ impl CentralizedEKF {
 
         let mut local_covariance = EstimatorMatrix::zeros();
 
-        local_covariance.view_mut((0,0), (SC_STATES, SC_STATES)).copy_from(&self.px.fixed_view::<SC_STATES, SC_STATES>(sc_state_index, sc_state_index));
-        local_covariance.view_mut((SC_STATES, SC_STATES), (GRAV_STATES, GRAV_STATES)).copy_from(&self.px.fixed_view::<GRAV_STATES, GRAV_STATES>(0, 0));
+        local_covariance
+            .view_mut((0, 0), (SC_STATES, SC_STATES))
+            .copy_from(
+                &self
+                    .px
+                    .fixed_view::<SC_STATES, SC_STATES>(sc_state_index, sc_state_index),
+            );
+        local_covariance
+            .view_mut((SC_STATES, SC_STATES), (GRAV_STATES, GRAV_STATES))
+            .copy_from(&self.px.fixed_view::<GRAV_STATES, GRAV_STATES>(0, 0));
 
-        local_covariance.view_mut((0, SC_STATES), (SC_STATES, GRAV_STATES)).copy_from(&self.px.fixed_view::<SC_STATES, GRAV_STATES>(sc_state_index, 0));
-        local_covariance.view_mut((SC_STATES, 0), (GRAV_STATES, SC_STATES)).copy_from(&self.px.fixed_view::<GRAV_STATES, SC_STATES>(0, sc_state_index));
+        local_covariance
+            .view_mut((0, SC_STATES), (SC_STATES, GRAV_STATES))
+            .copy_from(
+                &self
+                    .px
+                    .fixed_view::<SC_STATES, GRAV_STATES>(sc_state_index, 0),
+            );
+        local_covariance
+            .view_mut((SC_STATES, 0), (GRAV_STATES, SC_STATES))
+            .copy_from(
+                &self
+                    .px
+                    .fixed_view::<GRAV_STATES, SC_STATES>(0, sc_state_index),
+            );
 
         local_covariance
     }
 
     pub fn get_estimate(&self) -> Vec<EstimatorVector> {
-        
         (0..self.n_craft()).map(|i| self.local_state(i)).collect()
     }
 
     pub fn get_covariance(&self) -> Vec<EstimatorMatrix> {
-        (0..self.n_craft()).map(|i| self.local_covariance(i)).collect()
+        (0..self.n_craft())
+            .map(|i| self.local_covariance(i))
+            .collect()
     }
 
     fn process_noise_jacobian(&self) -> SMatrix<f64, SC_STATES, SC_STATES> {

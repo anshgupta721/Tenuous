@@ -35,7 +35,7 @@ fn to_est_matrix(name: &str, array: &PyReadonlyArray3<f64>) -> PyResult<Vec<Esti
 
 /// This function will return a time array, simulation truth state vector array, and estimator array
 #[pyfunction]
-#[pyo3(signature = (epoch_0, true_x_0, est_x_0, p_0, q, harmonics, t_span, dt, seed))]
+#[pyo3(signature = (epoch_0, true_x_0, est_x_0, p_0, q, harmonics, t_span, dt, save_every, full_covariance_flag, seed))]
 pub fn pysim_runner<'py>(
     py: Python<'py>,
     epoch_0: &str,
@@ -46,6 +46,8 @@ pub fn pysim_runner<'py>(
     harmonics: &str,
     t_span: [f64; 2],
     dt: f64,
+    save_every: f64,
+    full_covariance_flag: bool,
     seed: u64,
 ) -> PyResult<(
     Py<PyArray1<f64>>, // Time
@@ -95,8 +97,19 @@ pub fn pysim_runner<'py>(
         .map_err(|e| PyValueError::new_err(format!("failed to load harmonic coefficients: {e}")))?;
     // run the stepper
     let history = sim_stepper(
-        epoch_0, true_x_0, est_x_0, p_0, q, t_span, dt, harmonics, seed,
+        epoch_0,
+        true_x_0,
+        est_x_0,
+        p_0,
+        q,
+        t_span,
+        dt,
+        harmonics,
+        save_every,
+        full_covariance_flag,
+        seed,
     );
+
     let n_steps = history.t.len();
     let t_arr = history.t.into_pyarray(py).into();
     // Take t_hist vector and vectors of nalgebra arrays (x_hist and u_hist) and convert them to numpy arrays
@@ -120,23 +133,20 @@ pub fn pysim_runner<'py>(
         .into_pyarray(py)
         .into();
 
-    let est_cov_flat: Vec<f64> = history
-        .cov
+    let est_var_flat: Vec<f64> = history
+        .var
         .iter()
         .flat_map(|p| p.transpose().as_slice().to_vec())
         .collect();
-    let est_cov_arr =
-        Array4::from_shape_vec((n_steps * 2, n_craft, EST_STATES, EST_STATES), est_cov_flat)
+    let est_var_arr =
+        Array4::from_shape_vec((n_steps * 2, n_craft, EST_STATES, EST_STATES), est_var_flat)
             .map_err(|e| PyValueError::new_err(format!("bad covariance shape: {e}")))?
             .into_pyarray(py)
             .into();
 
-    Ok((t_arr, x_arr, est_arr, est_cov_arr))
-}
 
-// #[pyfunction]
-// #[pyo3(signature = (x_0, u_0, t_span, dt, n_runs, x0_std, process_noise_std, seed=None))]
-// fn monte_carlo_sim(
-//     py: Python<'py>,
-//     x_0: [f64; NX],
-// )
+    
+    
+
+    Ok((t_arr, x_arr, est_arr, est_var_arr))
+}
