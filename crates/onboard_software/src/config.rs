@@ -4,13 +4,13 @@ use nalgebra::{SMatrix, SVector};
 use anise::prelude::*;
 
 pub const SC_STATES: usize = 6;
-pub const GRAV_STATES: usize = 2;
+pub const SHM_DEGREE: usize = 2;
+pub const SHM_PARAMS: usize = (SHM_DEGREE + 1) * (SHM_DEGREE + 1) - 4; // Estimator SHM degree
+pub const GRAV_STATES: usize = 1 + SHM_PARAMS;
 pub const EST_STATES: usize = SC_STATES + GRAV_STATES;
 
 pub const MU_BENNU_GUESS: f64 = 4.89044967462; // m
 pub const REF_RADIUS_SHM: f64 = 290.0;
-pub const SHM_DEGREE: usize = 2;
-pub const SHM_PARAMS: usize = 4; // Estimator SHM degree
 
 pub const INER_FRAME: Frame = Frame::new(2101955, orientations::J2000);
 pub const SUN_FRAME: Frame = SUN_J2000;

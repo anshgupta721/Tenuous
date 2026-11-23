@@ -10,3 +10,4 @@ serde = { workspace = true }
 math = { workspace = true }
 dynamics = { workspace = true }
 nalgebra = { workspace = true }
+estimation.workspace = true
