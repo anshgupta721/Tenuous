@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-from config import PlotConfig
 from .common import _grid
 
 

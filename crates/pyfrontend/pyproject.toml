@@ -13,3 +13,8 @@ dependencies = [
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+
+[tool.pylint.design]
+max-args = 10
+max-positional-arguments = 10
+max-locals = 20

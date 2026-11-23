@@ -3,6 +3,7 @@ import numpy as np
 
 
 def set_axes_equal(ax):
+    """Sets axes values equal to each other"""
     limits = np.array([ax.get_xlim3d(), ax.get_ylim3d(), ax.get_zlim3d()])
     middles = limits.mean(axis=1)
     radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))

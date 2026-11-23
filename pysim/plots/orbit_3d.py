@@ -4,6 +4,7 @@ from .common import set_axes_equal
 
 
 def plot_orbit_3d(states, fig_size: tuple, cfg: PlotConfig):
+    """Orbit plot for spacecraft"""
     # states has shape (T, n_craft, n_states); every spacecraft goes on the same axes.
     n_craft = states.shape[1]
     fig = plt.figure(figsize=fig_size)
