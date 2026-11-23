@@ -14,8 +14,7 @@ pub const BENNU_BSP_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/sb-1
 pub const BENNU_PCA_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/bennu_v14.pca");
 
 // pub const BENNU_MU: f64 = 4.89044967462; // m^3 / s^2
-pub const SUN_MU: f64 = 1.32712440041279419E20;
-
+pub const SUN_MU: f64 = 1.327_124_400_412_794_2E20;
 pub const INER_FRAME: Frame = Frame::new(2101955, orientations::J2000);
 pub const SUN_FRAME: Frame = SUN_J2000;
 const BENNU_ID: i32 = 2101955;
