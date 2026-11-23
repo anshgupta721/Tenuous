@@ -1,16 +1,11 @@
-use dynamics::gravity::gravity::SphericalHarmonics;
-use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
-use dynamics::integrators::rk4::rk4;
 use nalgebra::{SMatrix, SVector};
 
-use anise::frames::Frame;
 use anise::prelude::*;
 
-use crate::config::{
-    AugmentedVector, EST_MAT_LENGTH, EST_STATES, EstimatorMatrix, EstimatorVector, FIXED_FRAME,
-    INER_FRAME, REF_RADIUS_SHM, SC_STATES, SHM_DEGREE, SHM_PARAMS,
-};
-use crate::filters::filter::{Context, Filter};
+use estimation::analysis::statistics::squared_mahalanobis_distance;
+
+use crate::config::{EstimatorMatrix, EstimatorVector};
+use crate::filters::filter::Filter;
 use crate::measurements::MeasurementModel;
 use crate::propagator::GravityDynamics;
 
@@ -73,7 +68,7 @@ impl Filter for BaseEKF {
         &mut self,
         meas_model: &Meas,
         z: &SVector<f64, M>,
-    ) -> SVector<f64, M> {
+    ) -> f64 {
         // mean estimate transformed from state domain into measurement domain
         let mz = meas_model.predict(&self.mx);
         let innov = z - mz;
@@ -89,7 +84,8 @@ impl Filter for BaseEKF {
         self.px = self.px - pxz * kalman_gain.transpose() - kalman_gain * pxz.transpose()
             + kalman_gain * pzz * kalman_gain.transpose();
 
-        innov
+        // Return the Normalized Innovation Squared (NIS)
+        squared_mahalanobis_distance(innov, pzz).unwrap()
     }
 
     fn set_estimate(&mut self, x: EstimatorVector, p: EstimatorMatrix) {
