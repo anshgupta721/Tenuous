@@ -1,8 +1,9 @@
 use anise::prelude::*;
 
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
+use estimation::analysis::statistics::squared_mahalanobis_distance;
 
-use onboard_software::config::{EstimatorMatrix, EstimatorVector};
+use onboard_software::config::{EstimatorMatrix, EstimatorVector, GRAV_STATES, SC_STATES};
 use onboard_software::filters::ekf::BaseEKF;
 use onboard_software::measurements::{LinearMeasurement, Models};
 use onboard_software::swarms::independent_swarm::IndependentSwarm;
@@ -66,28 +67,67 @@ pub fn run<SwrmNav: SwarmNavigation>(
 
         // Generate measurements for each spacecraft
         let meas = sensors.measurements(&world.crafts);
-        // let y: Vec<SensorVector> = meas.iter.map(|per_craft| )
 
-        // Propagate every spacecraft forward and add their value to
+        // Propagate every spacecraft forward
         swarm_navigation.predict(epoch, dt, &world.almanac);
+
+        // Add the predict step covariance matrix to full covariance history
         if full_covariance_flag {
-            history.cov_full.extend((0..n_craft).map(|i| swarm_navigation.covariance()[i]));
+            history
+                .cov_full
+                .extend((0..n_craft).map(|i| swarm_navigation.covariance()[i]));
         }
+
+        // Correct step using linear measurement
         swarm_navigation.correct(&models.pos_vel, &meas);
-        history
-            .var
-            .extend((0..n_craft).map(|i| swarm_navigation.covariance()[i].diagonal()));
+
+        let swarm_estimates = swarm_navigation.estimates();
+        let swarm_covariances = swarm_navigation.covariance();
+        let true_gravity = &world.harmonics.to_parameters()[..GRAV_STATES];
+        for craft in 0..n_craft {
+            let x_hat = &swarm_estimates[craft];
+            let p = &swarm_covariances[craft];
+            let mut full_truth_vector = EstimatorVector::zeros();
+            full_truth_vector
+                .fixed_rows_mut::<SC_STATES>(0)
+                .copy_from(&world.crafts[craft].x);
+            full_truth_vector
+                .fixed_rows_mut::<GRAV_STATES>(6)
+                .copy_from_slice(&true_gravity[..GRAV_STATES]);
+            let full_error = full_truth_vector - x_hat;
+
+            history
+                .nees_full_matrix
+                .push(squared_mahalanobis_distance(full_error, *p).unwrap());
+
+            let sc_error = full_error.fixed_rows::<SC_STATES>(0).into_owned();
+            let p_sc = p.fixed_view::<SC_STATES, SC_STATES>(0, 0).into_owned();
+            history
+                .nees_sc
+                .push(squared_mahalanobis_distance(sc_error, p_sc).unwrap());
+
+            let grav_error = full_error.fixed_rows::<GRAV_STATES>(SC_STATES).into_owned();
+            let p_grav = p
+                .fixed_view::<GRAV_STATES, GRAV_STATES>(SC_STATES, SC_STATES)
+                .into_owned();
+            history
+                .nees_grav_par
+                .push(squared_mahalanobis_distance(grav_error, p_grav).unwrap());
+
+            // Add the correct step covariance matrix to full covariance history
+            history.var.push(p.diagonal());
+        }
+
         if full_covariance_flag {
-            history.cov_full.extend((0..n_craft).map(|i| swarm_navigation.covariance()[i]));
+            history
+                .cov_full
+                .extend((0..n_craft).map(|i| swarm_navigation.covariance()[i]));
         }
         // Save data from each spacecraft
+        // Save truth and estimates
         history.t.push(world.t);
-        history
-            .truth
-            .extend(world.crafts.iter().map(|craft| craft.x));
-        history
-            .est
-            .extend(swarm_navigation.estimates().iter().map(|estimate| estimate));
+        history.truth.extend(world.crafts.iter().map(|c| c.x));
+        history.est.extend(swarm_estimates.iter().copied());
     }
     history
 }
@@ -100,12 +140,13 @@ pub fn sim_stepper(
     q: Vec<EstimatorMatrix>,
     t_span: [f64; 2],
     dt: f64,
+    mu: f64,
     harmonics: HarmonicCoeffs,
     save_every: f64,
     full_covariance_flag: bool,
     seed: u64,
 ) -> History {
-    let mut world = World::new(epoch_0, &x_0, t_span[0], seed, harmonics);
+    let mut world = World::new(epoch_0, &x_0, t_span[0], seed, mu, harmonics);
     let suites: Vec<SpacecraftSuite> = (0..x_0.len())
         .map(|c| {
             SpacecraftSuite::new(

@@ -12,7 +12,7 @@ use dynamics::integrators::rk4::rk4;
 use crate::plant::{Plant, StateVector};
 
 use crate::config::{
-    BENNU_BSP_FILE, BENNU_MU, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE,
+    BENNU_BSP_FILE, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE,
     REF_RADIUS_SHM, SHM_DEGREE, fix_bennu_parent,
 };
 
@@ -48,6 +48,7 @@ impl World {
         x_0: &[StateVector],
         t_0: f64,
         seed: u64,
+        mu: f64,
         harmonics: HarmonicCoeffs,
     ) -> Self {
         let almanac = Almanac::new(BSP_FILE)
@@ -64,7 +65,7 @@ impl World {
             SphericalHarmonics::new(REF_RADIUS_SHM, SHM_DEGREE),
             INER_FRAME,
             FIXED_FRAME,
-            BENNU_MU,
+            mu,
             harmonics.clone(),
         );
 
