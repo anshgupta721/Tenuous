@@ -18,8 +18,9 @@ class SimConfig:
 @dataclass(frozen=True)
 class PlotConfig:
     length_unit: str = "m"
-    state_names: tuple = ("x", "y", "z", "x_dot", "y_dot", "z_dot")
-    state_units = DEFAULT_STATE_KINDS
+    sc_state_names: tuple = ("x", "y", "z", "x_dot", "y_dot", "z_dot")
+    grav_state_names: tuple = ("mu", "C20", "C21", "S21", "C22", "S22")
+    sc_units = DEFAULT_STATE_KINDS
     time_label: str = "Time (s)"
     save_dir: Path | None = None
 
