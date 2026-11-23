@@ -10,16 +10,17 @@ def set_axes_equal(ax):
     ax.set_ylim3d([middles[1] - radius, middles[1] + radius])
     ax.set_zlim3d([middles[2] - radius, middles[2] + radius])
 
+
 def _grid(n_plots, ncols, figsize):
     """Shared-x grid with enough rows for n_plots; extra panels are hidden."""
     nrows = int(np.ceil(n_plots / ncols))
-    fig, axes = plt.subplots(nrows, ncols, sharex=True, squeeze=False,
-                             figsize=figsize)
+    fig, axes = plt.subplots(nrows, ncols, sharex=True, squeeze=False, figsize=figsize)
     for ax in axes.flat[n_plots:]:
         ax.set_visible(False)
     for ax in axes[-1, :]:
         ax.set_xlabel("Time (s)")
     return fig, axes
+
 
 LENGTH_UNITS = {
     "m": 1.0,
@@ -45,9 +46,7 @@ def length_scale(unit: str) -> float:
             f"Unknown length unit {unit!r}. Choose from {sorted(LENGTH_UNITS)}"
         ) from None
 
+
 def from_meters(values, unit: str):
     """Convert meters (or m/s) to `unit` (or unit/s)."""
     return np.asarray(values) / length_scale(unit)
-
-
-

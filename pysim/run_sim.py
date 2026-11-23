@@ -29,15 +29,15 @@
 #         [1282.37, 0.0, 0.0, 0.0, 0.0617543738092, 0.0],
 #         [0.0, 1282.37, 0.0, -0.0617543738092, 0.0, 0.0]])
 #     estimated_gravity_field = true_gravity_field
-    
+
 #     gravity_field_columns = np.repeat(
 #                 estimated_gravity_field[None, :], n_craft, axis=0
 #             )
 #     est_x_0 = np.concatenate((est_x_0, gravity_field_columns), axis=1)
-            
+
 #     sigma_mu = 0.05 * 4.89044967462
 
-    
+
 #     sc_p_0 = np.diag([2**2, 2**2, 2**2, .00003**2, .00003**2, .00003**2])
 #     sc_p_0 = np.asarray(sc_p_0, dtype=np.float64)
 #     grav_p_0 = np.diag([sigma_mu**2, 9.0e-8**2, 9.0e-8**2, 9.0e-8**2, 9.0e-8**2, 9.0e-8**2])
@@ -49,7 +49,7 @@
 #     Q0[:3, :3] = 1e-7**2 * np.eye(3)
 #     q = np.repeat(Q0[None], n_craft, axis=0)
 #     dt = 10
-   
+
 
 #     dict = pysim_runner(
 #         epoch_0, truth_x_0, est_x_0, p_0, q, harmonics, (0.0, 200000), 10, 10, True, 42
