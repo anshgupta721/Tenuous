@@ -56,3 +56,32 @@ def plot_param_sigma(t, est, cov, truth_params, labels, units, fig_size,
     return plot_error_sigma(t, err, sig, [labels[i] for i in idx],
                             [units[i] for i in idx], fig_size,
                             title=f"Parameter error (craft {craft})", **kw)
+
+def plot_run_overlay(t, errors, sigma, labels, units, title, fig_size, n_sigma=3.0, ncols=2):
+    """One panel per quantity, one translucent line per run, shared +/- n_sigma band.
+
+    errors: (n_runs, T, k)   sigma: (T, k)
+    """
+    n_runs, _, k = errors.shape
+    nrows = int(np.ceil(k / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=fig_size, sharex=True, squeeze=False)
+    for i in range(k):
+        ax = axes.flat[i]
+        band = n_sigma * sigma[:, i]
+        inside = np.mean(np.abs(errors[:, :, i]) <= band) * 100.0
+        for r in range(n_runs):
+            ax.plot(t, errors[r, :, i], lw=0.8, alpha=0.7)
+        ax.plot(t, band, "C3--", lw=0.9, label=f"±{n_sigma:g}σ (mean of shown runs)")
+        ax.plot(t, -band, "C3--", lw=0.9)
+        ax.fill_between(t, -band, band, color="C3", alpha=0.10)
+        ax.set_title(f"{labels[i]} ({inside:.1f}% of points within bounds)")
+        ax.set_ylabel(f"Error ({units[i]})")
+        ax.grid(True, alpha=0.3)
+    for ax in axes.flat[k:]:
+        ax.set_visible(False)
+    for ax in axes[-1]:
+        ax.set_xlabel("Time (s)")
+    axes.flat[0].legend(loc="upper right")
+    fig.suptitle(title)
+    fig.tight_layout()
+    return fig
