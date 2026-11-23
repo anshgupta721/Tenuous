@@ -2,22 +2,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from config import PlotConfig, SimConfig
+from config import PlotConfig
 from plots.orbit_3d import plot_orbit_3d
-from plots.state_history import plot_state_history
-from plots.three_sigma import plot_state_sigma, plot_param_sigma, plot_run_overlay
+from plots.three_sigma import plot_run_overlay
 from gravity_field import load_gravity_field, load_gravity_field_covariance, length_from_degree
 from scipy.linalg import block_diag
 
 from pyfrontend import pysim_runner  # pylint: disable=no-name-in-module  # type: ignore[attr-defined]
 
-
 # OUTPUT_CSV = "sim_output.csv"
 
-def run_monte_carlo(n_runs, epoch_0, x_0, P0, Q0, estimated_degree, nominal_gravity, nominal_gravity_cov, t_span, dt, save_every, base_seed=0):
-    CRAFTS, CRAFT_STATES = x_0.shape
+def run_monte_carlo(n_runs, epoch_0, x_0, p0, q0, estimated_degree, nominal_gravity, nominal_gravity_cov, t_span, dt, save_every, base_seed=0):
+    crafts, craft_states = x_0.shape
     results, true_fields = [], []
-    nominal_est_gravity = np.repeat(nominal_gravity[None, :length_from_degree(estimated_degree) + 1], CRAFTS, axis=0)
+    nominal_est_gravity = np.repeat(nominal_gravity[None, :length_from_degree(estimated_degree) + 1], craft_states, axis=0)
     for run in range(n_runs):
         seed = base_seed + run
         rng = np.random.default_rng(seed)
@@ -28,12 +26,12 @@ def run_monte_carlo(n_runs, epoch_0, x_0, P0, Q0, estimated_degree, nominal_grav
         true_gravity = rng.multivariate_normal(nominal_gravity, nominal_gravity_cov)
 
         sc_noise = np.array([
-            rng.multivariate_normal(np.zeros(CRAFT_STATES), P0[craft, :CRAFT_STATES, :CRAFT_STATES])
-            for craft in range(CRAFTS)
+            rng.multivariate_normal(np.zeros(craft_states), p0[craft, :craft_states, :craft_states])
+            for craft in range(crafts)
         ])
         est_x_0 = np.concatenate((x_0 + sc_noise, nominal_est_gravity), axis = 1)
 
-        results.append(pysim_runner(epoch_0, x_0, est_x_0, P0, Q0, true_gravity, t_span, dt, save_every, True, seed))
+        results.append(pysim_runner(epoch_0, x_0, est_x_0, p0, q0, true_gravity, t_span, dt, save_every, True, seed))
         true_fields.append(true_gravity)        
 
     return results, true_fields
@@ -71,9 +69,9 @@ if __name__ == "__main__":
     Q0[:3, :3] = 1e-7**2 * np.eye(3)
     q = np.repeat(Q0[None], CRAFTS, axis=0)
     
-    dt = 30
-    save_every = 30
-    t_span = (0.0, 200000)
+    dt = 3600
+    save_every = 3600
+    t_span = (0.0, 4752000)
     seed = 42
 
     n_runs = 1
@@ -91,7 +89,6 @@ if __name__ == "__main__":
     full_nees = []
     snapshot_index = []
     covariance_full = []
-
 
     for item in dicts:
         truth_states.append(item["truth"])
