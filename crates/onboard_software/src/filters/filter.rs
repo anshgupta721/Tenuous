@@ -23,7 +23,7 @@ pub trait Filter {
         &mut self,
         model: &Meas,
         z: &SVector<f64, M>,
-    );
+    ) -> f64;
     fn set_estimate(&mut self, x: EstimatorVector, p: EstimatorMatrix);
     fn estimate(&self) -> EstimatorVector;
     fn covariance(&self) -> EstimatorMatrix;

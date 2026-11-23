@@ -10,3 +10,4 @@ rayon = "1"
 nalgebra = "0.35.0"
 math = { git = "https://github.com/anshgupta721/Azimuth.git", version = "0.1.0" }
 dynamics = { git = "https://github.com/anshgupta721/Azimuth.git", version = "0.1.0" }
+estimation = { git = "https://github.com/anshgupta721/Azimuth.git", version = "0.1.0" }

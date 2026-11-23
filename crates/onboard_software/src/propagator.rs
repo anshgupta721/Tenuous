@@ -7,7 +7,7 @@ use dynamics::integrators::rk4::rk4;
 
 use crate::config::{
     AugmentedVector, EST_MAT_LENGTH, EST_STATES, EstimatorMatrix, EstimatorVector, FIXED_FRAME,
-    GRAV_STATES, INER_FRAME, REF_RADIUS_SHM, SC_STATES, SHM_DEGREE, SHM_PARAMS,
+    INER_FRAME, REF_RADIUS_SHM, SC_STATES, SHM_DEGREE, SHM_PARAMS,
 };
 
 fn stack_state_and_stm(
