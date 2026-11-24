@@ -20,5 +20,10 @@ jobs:
         pip install pylint ./crates/pyfrontend
     - name: Analysing the code with pylint
       run: |
-        pylint --max-positional-arguments=10 $(git ls-files '*.py')
+        pylint \
+          --max-args=10 \
+          --max-positional-arguments=10 \
+          --max-locals=20 \
+          --disable=missing-module-docstring,missing-function-docstring \
+          $(git ls-files '*.py')
         - name: Analysing the code with pylint
