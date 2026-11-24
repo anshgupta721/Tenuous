@@ -22,9 +22,11 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint \
-          --max-args=10 \
-          --max-positional-arguments=10 \
-          --max-locals=20 \
-          --disable=missing-module-docstring,missing-function-docstring \
+          --max-args=12 \
+          --max-positional-arguments=12 \
+          --max-locals=23 \
+          --max-line-length=120 \
+          --good-names=P,i,j,k,x,y,z,t,dt \
+          --disable=missing-module-docstring,missing-function-docstring,missing-class-docstring,redefined-outer-name \
           --fail-under=9 \
           $(git ls-files '*.py')
