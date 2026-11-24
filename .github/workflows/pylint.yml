@@ -20,6 +20,5 @@ jobs:
         pip install pylint ./crates/pyfrontend
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
-        - name: Analysing the code with pylint
         pylint --max-positional-arguments=10 $(git ls-files '*.py')
+        - name: Analysing the code with pylint
