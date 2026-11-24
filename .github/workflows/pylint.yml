@@ -28,4 +28,3 @@ jobs:
           --disable=missing-module-docstring,missing-function-docstring \
           --fail-under=9 \
           $(git ls-files '*.py')
-        - name: Analysing the code with pylint
