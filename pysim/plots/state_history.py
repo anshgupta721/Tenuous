@@ -1,6 +1,5 @@
 from config import PlotConfig
 from .common import _grid
-import matplotlib.pyplot as plt
 
 
 def plot_state_history(
