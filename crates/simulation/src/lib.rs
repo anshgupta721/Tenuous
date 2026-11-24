@@ -4,3 +4,5 @@ pub mod plant;
 pub mod sensors;
 pub mod stepper;
 pub mod world;
+
+pub mod graph;
