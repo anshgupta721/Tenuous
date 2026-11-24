@@ -12,8 +12,8 @@ use dynamics::integrators::rk4::rk4;
 use crate::plant::{Plant, StateVector};
 
 use crate::config::{
-    BENNU_BSP_FILE, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE,
-    REF_RADIUS_SHM, SHM_DEGREE, fix_bennu_parent,
+    BENNU_BSP_FILE, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE, REF_RADIUS_SHM,
+    SHM_DEGREE, fix_bennu_parent,
 };
 
 pub struct Observables {
