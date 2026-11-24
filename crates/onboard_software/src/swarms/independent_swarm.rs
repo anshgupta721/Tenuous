@@ -2,11 +2,11 @@ use anise::prelude::*;
 use nalgebra::SVector;
 
 use crate::config::{EstimatorMatrix, EstimatorVector};
-use crate::filters::filter::{Context, Filter};
+use crate::filters::filter::Filter;
 use crate::measurements::MeasurementModel;
 use crate::swarms::swarm_navigation::SwarmNavigation;
 
-pub struct IndependentSwarm<F> {
+pub struct IndependentSwarm<F: Filter> {
     filters: Vec<F>,
 }
 
