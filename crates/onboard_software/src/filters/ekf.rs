@@ -81,9 +81,11 @@ impl Filter for BaseEKF {
         let pzz = observation_jacobian * self.px * observation_jacobian.transpose() + r; // R should eventually change to noise jacobian when noise isn't additive
         let kalman_gain = pxz * pzz.try_inverse().expect("P_zz is singular");
         self.mx = self.mx + kalman_gain * (z - mz);
-        self.px = self.px - pxz * kalman_gain.transpose() - kalman_gain * pxz.transpose()
-            + kalman_gain * pzz * kalman_gain.transpose();
-
+        // self.px = self.px - pxz * kalman_gain.transpose() - kalman_gain * pxz.transpose()
+        //     + kalman_gain * pzz * kalman_gain.transpose();
+        let i_n = EstimatorMatrix::identity();
+        // Joseph form update
+        self.px = (i_n - kalman_gain * observation_jacobian) * self.px * (i_n - kalman_gain * observation_jacobian).transpose() + kalman_gain * r * kalman_gain.transpose();
         // Return the Normalized Innovation Squared (NIS)
         squared_mahalanobis_distance(innov, pzz).unwrap_or(f64::NAN)
     }
