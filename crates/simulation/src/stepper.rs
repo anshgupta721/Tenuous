@@ -9,13 +9,13 @@ use onboard_software::measurements::{LinearMeasurement, Models};
 use onboard_software::swarms::independent_swarm::IndependentSwarm;
 use onboard_software::swarms::swarm_navigation::SwarmNavigation;
 
+use crate::graph::Graph;
 use crate::plant::StateVector;
 use crate::sensors::{
     POS_SIGMA, PosVelSensor, Sensor, SensorID, SpacecraftSuite, SwarmSensors, VEL_SIGMA,
     sensor_rng_generator,
 };
 use crate::world::World;
-use crate::graph::Graph;
 
 pub struct History {
     // pub n_craft: usize,
@@ -26,7 +26,7 @@ pub struct History {
     pub nees_sc: Vec<f64>,       // [step][craft]
     pub nees_grav_par: Vec<f64>, // [step][craft]
     pub nees_full_matrix: Vec<f64>, // [step][craft]
-    pub nis_pos_vel: Vec<f64>, // [step][craft]
+    pub nis_pos_vel: Vec<f64>,   // [step][craft]
     pub snap_idx: Vec<usize>,    // step indices where full covariances are saved
     pub cov_snap: Vec<EstimatorMatrix>, // snap_idx.len() * n_craft, post-update
     pub cov_full: Vec<EstimatorMatrix>, // interleaved predict/update, only if full_cov is true
@@ -50,11 +50,15 @@ impl History {
         }
     }
 
-    pub fn append_full_covariance() {
+    pub fn append_full_covariance() {}
 
-    }
-
-    pub fn record<SwrmNav: SwarmNavigation>(&mut self, world: &World, swarm_navigation: &SwrmNav, mut nis: Vec<f64>, full_covariance_flag: bool) {
+    pub fn record<SwrmNav: SwarmNavigation>(
+        &mut self,
+        world: &World,
+        swarm_navigation: &SwrmNav,
+        mut nis: Vec<f64>,
+        full_covariance_flag: bool,
+    ) {
         let n_craft = world.crafts.len();
         let swarm_estimates = swarm_navigation.estimates();
         let swarm_covariances = swarm_navigation.covariance();
@@ -120,9 +124,14 @@ pub fn run<SwrmNav: SwarmNavigation>(
     let n_craft = world.crafts.len();
     if full_covariance_flag {
         let p0 = swarm_navigation.covariance();
-        history.cov_full.extend(p0.iter().copied());      // stands in for the step-0 "predict" entry
+        history.cov_full.extend(p0.iter().copied()); // stands in for the step-0 "predict" entry
     }
-    history.record(world, swarm_navigation, vec![f64::NAN; n_craft], full_covariance_flag);
+    history.record(
+        world,
+        swarm_navigation,
+        vec![f64::NAN; n_craft],
+        full_covariance_flag,
+    );
     for _ in 0..n {
         // Propagate all spacecraft from n to n+1
         let epoch = world.step(dt);
@@ -177,7 +186,7 @@ pub fn sim_stepper(
         .collect();
 
     let mut swarm = SwarmSensors::new(suites);
-    
+
     // Measurement models defined here
     let models = Models {
         pos_vel: LinearMeasurement::position_velocity(POS_SIGMA, VEL_SIGMA),

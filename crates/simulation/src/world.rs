@@ -1,13 +1,13 @@
-use nalgebra::{Isometry3, SVector, Translation, UnitQuaternion, Rotation3};
+use nalgebra::{Isometry3, Rotation3, SVector, Translation, UnitQuaternion};
 use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
 
 use anise::prelude::*;
 use hifitime::Epoch;
 
-use tobj;
-use parry3d_f64::shape::TriMesh;
 use parry3d_f64::math::Vec3;
+use parry3d_f64::shape::TriMesh;
+use tobj;
 
 use dynamics::gravity::gravity::SphericalHarmonics;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
@@ -17,7 +17,7 @@ use crate::plant::{Plant, StateVector};
 
 use crate::config::{
     BENNU_BSP_FILE, BENNU_PCA_FILE, BSP_FILE, FIXED_FRAME, INER_FRAME, PCA_FILE, REF_RADIUS_SHM,
-    SHM_DEGREE, SHAPE_MODEL, SHAPE_SCALE, fix_bennu_parent, load_tobj_options
+    SHAPE_MODEL, SHAPE_SCALE, SHM_DEGREE, fix_bennu_parent, load_tobj_options,
 };
 
 pub struct Observables {
@@ -46,7 +46,7 @@ pub struct World {
     pub t: f64,
     pub crafts: Vec<Spacecraft>,
     shape: TriMesh,
-    pub shape_pose: Isometry3<f64>
+    pub shape_pose: Isometry3<f64>,
 }
 
 impl World {
@@ -77,7 +77,7 @@ impl World {
             mu,
             harmonics.clone(),
         );
-        
+
         // Instantiate each craft with a different set of RNG's that the sensors module can use
         let crafts: Vec<Spacecraft> = x_0
             .iter()
@@ -93,7 +93,7 @@ impl World {
             .collect();
 
         // Link the asteroid shape model into the spin given by the ANISE Almanac
-        
+
         // Read OBJ
         let (models, _material) = tobj::load_obj(SHAPE_MODEL, &load_tobj_options()).unwrap();
         let mesh = &models[0].mesh;
@@ -104,12 +104,14 @@ impl World {
             .chunks_exact(3)
             .map(|p| Vec3::new(p[0] as f64, p[1] as f64, p[2] as f64) * SHAPE_SCALE)
             .collect();
-        let indices = mesh.indices.chunks_exact(3)
+        let indices = mesh
+            .indices
+            .chunks_exact(3)
             .map(|f| [f[0], f[1], f[2]])
             .collect();
         // Conduct BVH on the asteroid
         let trimesh: TriMesh = TriMesh::new(vertices, indices).unwrap();
-        
+
         Self {
             almanac,
             harmonics,
@@ -146,11 +148,17 @@ impl World {
 
     pub fn update_shape_pose(&mut self) {
         // extract what the real pose is from the almanac
-        let pose = self.almanac
-            .rotate(self.plant.body_fixed_frame, self.plant.inertial_frame, self.epoch())
+        let pose = self
+            .almanac
+            .rotate(
+                self.plant.body_fixed_frame,
+                self.plant.inertial_frame,
+                self.epoch(),
+            )
             .unwrap();
         // Set the pose of the shape model
-        let quaternion = UnitQuaternion::from_rotation_matrix(&Rotation3::from_matrix_unchecked(pose.rot_mat));
+        let quaternion =
+            UnitQuaternion::from_rotation_matrix(&Rotation3::from_matrix_unchecked(pose.rot_mat));
         // Translation is identity since we propagate all from a bennu centered coordinate frame
         self.shape_pose = Isometry3::from_parts(Translation::identity(), quaternion);
     }

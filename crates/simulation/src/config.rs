@@ -41,8 +41,8 @@ pub const SHAPE_MODEL: &str = "crates/simulation/data/bennu_OLA_v21_PTM_very-hig
 pub const SHAPE_SCALE: f64 = 1000.0;
 pub fn load_tobj_options() -> tobj::LoadOptions {
     tobj::LoadOptions {
-        triangulate: true,   // split any quads into triangles
-        single_index: true,  // one index list shared by positions
+        triangulate: true,  // split any quads into triangles
+        single_index: true, // one index list shared by positions
         ..Default::default()
     }
 }

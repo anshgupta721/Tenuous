@@ -85,7 +85,10 @@ impl Filter for BaseEKF {
         //     + kalman_gain * pzz * kalman_gain.transpose();
         let i_n = EstimatorMatrix::identity();
         // Joseph form update
-        self.px = (i_n - kalman_gain * observation_jacobian) * self.px * (i_n - kalman_gain * observation_jacobian).transpose() + kalman_gain * r * kalman_gain.transpose();
+        self.px = (i_n - kalman_gain * observation_jacobian)
+            * self.px
+            * (i_n - kalman_gain * observation_jacobian).transpose()
+            + kalman_gain * r * kalman_gain.transpose();
         // Return the Normalized Innovation Squared (NIS)
         squared_mahalanobis_distance(innov, pzz).unwrap_or(f64::NAN)
     }
