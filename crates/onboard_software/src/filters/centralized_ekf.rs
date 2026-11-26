@@ -145,22 +145,28 @@ impl CentralizedEKF {
         h: &DMatrix<f64>,     // M x STATES
         innov: &DVector<f64>, // M
         r: &DMatrix<f64>,
-    ) {
+    ) -> f64 {
         let pxz = &self.px * h.transpose();
         let pzz = h * &self.px * h.transpose() + r;
+        let mahalanobis_distance = (innov.transpose()
+            * pzz.clone().try_inverse().expect("P_zz is singular")
+            * innov)[(0, 0)];
         let kalman_gain = &pxz * pzz.clone().try_inverse().expect("P_zz is singular");
         self.mx = &self.mx + &kalman_gain * innov;
         self.px = &self.px - &pxz * &kalman_gain.transpose() - &kalman_gain * &pxz.transpose()
             + &kalman_gain * &pzz * &kalman_gain.transpose();
+
+        mahalanobis_distance
     }
 
     pub fn correct<const M: usize, Meas: MeasurementModel<M>>(
         &mut self,
         meas_model: &Meas,
         z: &[SVector<f64, M>],
-    ) {
+    ) -> Vec<f64> {
         // process the measurements of every spacecraft and calculate cross and innovation covariance
         let states = self.mx.len();
+        let mut mahalanobs = Vec::new();
         for i in 0..self.n_craft() {
             let local_state = self.local_state(i);
 
@@ -178,11 +184,12 @@ impl CentralizedEKF {
             h.view_mut((0, 0), (M, GRAV_STATES))
                 .copy_from(&h_local.fixed_columns::<GRAV_STATES>(SC_STATES));
 
-            self.local_correct(
+            mahalanobs.push(self.local_correct(
                 &h,
                 &DVector::from_column_slice(innov.as_slice()),
                 &DMatrix::from_column_slice(M, M, r.as_slice()),
-            );
+            ));
         }
+        mahalanobs
     }
 }

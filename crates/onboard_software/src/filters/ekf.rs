@@ -85,7 +85,7 @@ impl Filter for BaseEKF {
             + kalman_gain * pzz * kalman_gain.transpose();
 
         // Return the Normalized Innovation Squared (NIS)
-        squared_mahalanobis_distance(innov, pzz).unwrap()
+        squared_mahalanobis_distance(innov, pzz).unwrap_or(f64::NAN)
     }
 
     fn set_estimate(&mut self, x: EstimatorVector, p: EstimatorMatrix) {
