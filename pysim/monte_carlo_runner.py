@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from config import PlotConfig
 from plots.orbit_3d import plot_orbit_3d
 from plots.three_sigma import plot_run_overlay
+from plots.consistency import plot_chi2
 from gravity_field import (
     load_gravity_field,
     load_gravity_field_covariance,
@@ -36,7 +37,7 @@ def run_monte_carlo(
     results, true_fields = [], []
     nominal_est_gravity = np.repeat(
         nominal_gravity[None, : length_from_degree(estimated_degree) + 1],
-        craft_states,
+        crafts,
         axis=0,
     )
     for run in range(n_runs):
@@ -79,7 +80,7 @@ def run_monte_carlo(
 
 
 if __name__ == "__main__":
-    epoch_0 = "2019-07-15T11:23:27.30 UTC"
+    epoch_0 = "2019-07-13T11:23:27.30 UTC"
     MEAN_COEFFS_STR = "pysim/data/chesley_coeffs.csv"
     COVAR_COEFFS_STR = "pysim/data/chesley_coeffs_covariance.csv"
     truth_degree = 10
@@ -115,14 +116,17 @@ if __name__ == "__main__":
     I = np.eye(3)
 
     p_single = np.asarray(block_diag(sc_p_0, gravity_p_0), dtype=np.float64)
+
+    # print(p_single)
+
     p_0 = np.repeat(p_single[None], CRAFTS, axis=0)
     Q0 = np.zeros((12, 12))
     Q0[:3, :3] = 1e-7**2 * np.eye(3)
     q = np.repeat(Q0[None], CRAFTS, axis=0)
 
-    dt = 3600
-    save_every = 3600
-    t_span = (0.0, 4752000)
+    dt = 360
+    save_every = 360
+    t_span = (0.0, 5000000)
     seed = 42
 
     n_runs = 1
@@ -143,6 +147,11 @@ if __name__ == "__main__":
         seed,
     )
 
+
+    for key in ("nees_full", "nees_sc", "nees_grav_par", "nis_pos_vel"):
+        a = np.asarray(dicts[0][key])            # (T, n_craft)
+        bad = np.where(np.isnan(a).any(axis=1))[0]
+        print(key, "first NaN step:", bad[0] if len(bad) else None, "of", a.shape[0])
     # take a few random runs and put them all on one plot rather than individual runs to make sure all converge
     t = []
     truth_states = []
@@ -211,6 +220,14 @@ if __name__ == "__main__":
             f"Gravity error, craft {craft}",
             (12, 8),
         )
+        nees = {
+            "spacecraft": np.stack(spacecraft_nees),
+            "gravity":    np.stack(gravity_nees),
+            "full":       np.stack(full_nees),
+        }
+        dims = {"spacecraft": CRAFT_STATES, "gravity": EST_GRAV_STATES,
+                "full": CRAFT_STATES + EST_GRAV_STATES}
+        plot_chi2(t, nees, dims, "NEES")
 
     plt.show()
 
