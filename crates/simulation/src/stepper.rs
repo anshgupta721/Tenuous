@@ -15,6 +15,7 @@ use crate::sensors::{
     sensor_rng_generator,
 };
 use crate::world::World;
+use crate::graph::Graph;
 
 pub struct History {
     // pub n_craft: usize,
@@ -125,6 +126,9 @@ pub fn run<SwrmNav: SwarmNavigation>(
     for _ in 0..n {
         // Propagate all spacecraft from n to n+1
         let epoch = world.step(dt);
+
+        // Update pose of the shape
+        world.update_shape_pose();
 
         // Generate measurements for each spacecraft
         let meas = sensors.measurements(&world.crafts);
