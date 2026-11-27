@@ -6,12 +6,6 @@ use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 use crate::config::{EstimatorMatrix, EstimatorVector};
 use crate::measurements::MeasurementModel;
 
-#[derive(Clone, Copy)]
-pub struct Context<'a> {
-    pub almanac: &'a Almanac,
-    pub harmonics: &'a HarmonicCoeffs, // whatever type load() returns
-}
-
 pub trait Filter {
     fn new(
         initial_state_guess: EstimatorVector,

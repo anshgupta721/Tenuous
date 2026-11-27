@@ -27,8 +27,8 @@ fn point_mass_acceleration(mu: f64, pos_body_fixed: SVector<f64, 3>) -> SVector<
 
 pub struct Plant {
     gravity: SphericalHarmonics,
-    inertial_frame: Frame,
-    body_fixed_frame: Frame,
+    pub inertial_frame: Frame,
+    pub body_fixed_frame: Frame,
     mu: f64,
     coeffs: HarmonicCoeffs,
 }

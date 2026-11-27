@@ -2,7 +2,7 @@ use anise::prelude::*;
 use nalgebra::SVector;
 
 use crate::config::{EstimatorMatrix, EstimatorVector};
-use crate::filters::filter::{Context, Filter};
+use crate::filters::filter::Filter;
 use crate::measurements::MeasurementModel;
 
 pub trait SwarmNavigation {
@@ -16,7 +16,7 @@ pub trait SwarmNavigation {
         &mut self,
         model: &Meas,
         y: &Vec<SVector<f64, M>>,
-    );
+    ) -> Vec<f64>;
     fn estimates(&self) -> Vec<EstimatorVector>;
     fn covariance(&self) -> Vec<EstimatorMatrix>;
 }

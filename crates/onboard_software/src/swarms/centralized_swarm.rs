@@ -3,7 +3,7 @@ use nalgebra::{DMatrix, DVector, SMatrix, SVector};
 
 use crate::config::{EST_STATES, EstimatorMatrix, EstimatorVector, GRAV_STATES, SC_STATES};
 use crate::filters::centralized_ekf::CentralizedEKF;
-use crate::filters::filter::{Context, Filter};
+use crate::filters::filter::Filter;
 use crate::measurements::MeasurementModel;
 use crate::swarms::swarm_navigation::SwarmNavigation;
 
@@ -55,8 +55,8 @@ impl SwarmNavigation for CentralizedSwarm {
         &mut self,
         model: &Meas,
         y: &Vec<SVector<f64, M>>,
-    ) {
-        self.filter.correct(model, y);
+    ) -> Vec<f64> {
+        self.filter.correct(model, y)
     }
 
     fn estimates(&self) -> Vec<EstimatorVector> {

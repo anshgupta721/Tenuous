@@ -196,7 +196,10 @@ pub fn pysim_runner<'py>(
             history.nees_full_matrix,
         )?,
     )?;
-    // history_dict.set_item("nis_pos_vel", to_py(py, "nis_pos_vel", &[n_steps, n_craft], history.nis_pos_vel)); // remove if you haven't added NIS
+    history_dict.set_item(
+        "nis_pos_vel",
+        to_py(py, "nis_pos_vel", &[n_steps, n_craft], history.nis_pos_vel)?,
+    )?;
     history_dict.set_item("snap_idx", history.snap_idx.clone().into_pyarray(py))?;
     history_dict.set_item(
         "cov_snap",

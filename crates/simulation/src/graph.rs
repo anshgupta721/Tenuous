@@ -10,8 +10,8 @@ impl Graph {
     }
 
     pub fn set_visibility(&mut self, craft1: usize, craft2: usize, value: bool) {
-        self.graph[craft1][craft2] = value;
-        self.graph[craft2][craft1] = value;
+        self.graph[craft1 as usize][craft2 as usize] = value;
+        self.graph[craft2 as usize][craft1 as usize] = value;
     }
 
     pub fn get_graph(&self) -> &Vec<Vec<bool>> {
