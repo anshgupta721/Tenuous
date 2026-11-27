@@ -114,6 +114,7 @@ pub fn run<SwrmNav: SwarmNavigation>(
     sensors: &mut SwarmSensors,
     swarm_navigation: &mut SwrmNav,
     models: &Models,
+    comm_graph: &mut Graph,
     t_end: f64,
     dt: f64,
     save_every: f64,
@@ -132,12 +133,16 @@ pub fn run<SwrmNav: SwarmNavigation>(
         vec![f64::NAN; n_craft],
         full_covariance_flag,
     );
+
     for _ in 0..n {
         // Propagate all spacecraft from n to n+1
         let epoch = world.step(dt);
 
         // Update pose of the shape
         world.update_shape_pose();
+
+        // Set communication graph
+        world.line_of_sight(n_craft, comm_graph);
 
         // Generate measurements for each spacecraft
         let meas = sensors.measurements(&world.crafts);
@@ -155,6 +160,8 @@ pub fn run<SwrmNav: SwarmNavigation>(
         // Correct step using linear measurement
         let nis = swarm_navigation.correct(&models.pos_vel, &meas);
 
+        // Any future information fusion step here should be run based on the communication graph
+        
         // Extract data and send it out
         history.record(world, swarm_navigation, nis, full_covariance_flag);
     }
@@ -175,8 +182,9 @@ pub fn sim_stepper(
     full_covariance_flag: bool,
     seed: u64,
 ) -> History {
+    let n_craft = x_0.len();
     let mut world = World::new(epoch_0, &x_0, t_span[0], seed, mu, harmonics);
-    let suites: Vec<SpacecraftSuite> = (0..x_0.len())
+    let suites: Vec<SpacecraftSuite> = (0..n_craft)
         .map(|c| {
             SpacecraftSuite::new(
                 vec![Box::new(PosVelSensor::new(SensorID::new(0))) as Box<dyn Sensor>],
@@ -194,11 +202,14 @@ pub fn sim_stepper(
 
     let mut navigation = IndependentSwarm::<BaseEKF>::new(est_x_0, p_0, q);
 
+    let mut comm_graph = Graph::new(n_craft);
+
     run(
         &mut world,
         &mut swarm,
         &mut navigation,
         &models,
+        &mut comm_graph,
         t_span[1],
         dt,
         save_every,

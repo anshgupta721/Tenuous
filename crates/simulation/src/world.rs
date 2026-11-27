@@ -1,3 +1,5 @@
+use std::range;
+
 use nalgebra::{Isometry3, Rotation3, SVector, Translation, UnitQuaternion};
 use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
@@ -7,12 +9,14 @@ use hifitime::Epoch;
 
 use parry3d_f64::math::Vec3;
 use parry3d_f64::shape::TriMesh;
+use parry3d_f64::query::{Ray, RayCast};
 use tobj;
 
 use dynamics::gravity::gravity::SphericalHarmonics;
 use dynamics::gravity::spherical_harmonics::HarmonicCoeffs;
 use dynamics::integrators::rk4::rk4;
 
+use crate::graph::Graph;
 use crate::plant::{Plant, StateVector};
 
 use crate::config::{
@@ -46,7 +50,7 @@ pub struct World {
     pub t: f64,
     pub crafts: Vec<Spacecraft>,
     shape: TriMesh,
-    pub shape_pose: Isometry3<f64>,
+    pub shape_pose: Isometry3<f64>, // Pose in body frame
 }
 
 impl World {
@@ -147,12 +151,12 @@ impl World {
     }
 
     pub fn update_shape_pose(&mut self) {
-        // extract what the real pose is from the almanac
+        // extract what the pose of the body is wrt inertial
         let pose = self
             .almanac
             .rotate(
-                self.plant.body_fixed_frame,
                 self.plant.inertial_frame,
+                self.plant.body_fixed_frame,
                 self.epoch(),
             )
             .unwrap();
@@ -161,5 +165,28 @@ impl World {
             UnitQuaternion::from_rotation_matrix(&Rotation3::from_matrix_unchecked(pose.rot_mat));
         // Translation is identity since we propagate all from a bennu centered coordinate frame
         self.shape_pose = Isometry3::from_parts(Translation::identity(), quaternion);
+    }
+
+    pub fn line_of_sight(&mut self, n_craft: usize, comm_graph: &mut Graph) {
+        // Check to see if there are obstructions between spacecraft
+
+        let body_pos: Vec<SVector<f64,3>> = self.crafts.iter().map(|craft| { let vec =  self.shape_pose.transform_vector(&craft.x.fixed_rows::<3>(0).into_owned()); vec } ).collect();
+
+
+        for i in 0..n_craft {
+            for j in i + 1..n_craft {
+                // calculate position vector between spacecraft
+                let range_vector: SVector<f64, 3> =
+                    body_pos[i]
+                        - body_pos[j];
+                // Shoot a ray along the vector and see if it hits the object
+                let origin = body_pos[i];
+                
+                let ray = Ray::new(Vec3::new(origin.x, origin.y, origin.z), Vec3::new(range_vector.x, range_vector.y, range_vector.z));
+                let blocked = self.shape.cast_local_ray(&ray, 1.0, true).is_some();
+                
+                comm_graph.set_visibility(i, j, blocked);
+            }
+        }
     }
 }
