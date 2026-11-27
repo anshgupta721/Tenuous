@@ -161,7 +161,7 @@ pub fn run<SwrmNav: SwarmNavigation>(
         let nis = swarm_navigation.correct(&models.pos_vel, &meas);
 
         // Any future information fusion step here should be run based on the communication graph
-        
+
         // Extract data and send it out
         history.record(world, swarm_navigation, nis, full_covariance_flag);
     }

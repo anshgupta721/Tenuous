@@ -8,8 +8,8 @@ use anise::prelude::*;
 use hifitime::Epoch;
 
 use parry3d_f64::math::Vec3;
-use parry3d_f64::shape::TriMesh;
 use parry3d_f64::query::{Ray, RayCast};
+use parry3d_f64::shape::TriMesh;
 use tobj;
 
 use dynamics::gravity::gravity::SphericalHarmonics;
@@ -170,21 +170,30 @@ impl World {
     pub fn line_of_sight(&mut self, n_craft: usize, comm_graph: &mut Graph) {
         // Check to see if there are obstructions between spacecraft
 
-        let body_pos: Vec<SVector<f64,3>> = self.crafts.iter().map(|craft| { let vec =  self.shape_pose.transform_vector(&craft.x.fixed_rows::<3>(0).into_owned()); vec } ).collect();
-
+        let body_pos: Vec<SVector<f64, 3>> = self
+            .crafts
+            .iter()
+            .map(|craft| {
+                let vec = self
+                    .shape_pose
+                    .transform_vector(&craft.x.fixed_rows::<3>(0).into_owned());
+                vec
+            })
+            .collect();
 
         for i in 0..n_craft {
             for j in i + 1..n_craft {
                 // calculate position vector between spacecraft
-                let range_vector: SVector<f64, 3> =
-                    body_pos[i]
-                        - body_pos[j];
+                let range_vector: SVector<f64, 3> = body_pos[i] - body_pos[j];
                 // Shoot a ray along the vector and see if it hits the object
                 let origin = body_pos[i];
-                
-                let ray = Ray::new(Vec3::new(origin.x, origin.y, origin.z), Vec3::new(range_vector.x, range_vector.y, range_vector.z));
+
+                let ray = Ray::new(
+                    Vec3::new(origin.x, origin.y, origin.z),
+                    Vec3::new(range_vector.x, range_vector.y, range_vector.z),
+                );
                 let blocked = self.shape.cast_local_ray(&ray, 1.0, true).is_some();
-                
+
                 comm_graph.set_visibility(i, j, blocked);
             }
         }
