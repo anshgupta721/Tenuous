@@ -36,3 +36,13 @@ pub const SHM_DEGREE: usize = 10;
 pub const SC_MASS: f64 = 1500.0; // kg
 pub const SC_CS_AREA: f64 = 20.0; // m^2 changed
 pub const SC_REFLECTIVITY: f64 = 1.4;
+
+pub const SHAPE_MODEL: &str = "crates/simulation/data/bennu_OLA_v21_PTM_very-high.obj";
+pub const SHAPE_SCALE: f64 = 1000.0;
+pub fn load_tobj_options() -> tobj::LoadOptions {
+    tobj::LoadOptions {
+        triangulate: true,  // split any quads into triangles
+        single_index: true, // one index list shared by positions
+        ..Default::default()
+    }
+}

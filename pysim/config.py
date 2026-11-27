@@ -1,6 +1,6 @@
 """Configuration for both the simulation and analysis"""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from plots.common import from_meters, DEFAULT_STATE_KINDS
 

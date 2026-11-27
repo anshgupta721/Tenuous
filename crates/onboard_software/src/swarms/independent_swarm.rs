@@ -38,11 +38,13 @@ impl<F: Filter> SwarmNavigation for IndependentSwarm<F> {
         &mut self,
         model: &Meas,
         y: &Vec<SVector<f64, M>>,
-    ) {
+    ) -> Vec<f64> {
         let measurements: Vec<&SVector<f64, M>> = y.iter().collect();
+        let mut vec = Vec::new();
         for (i, filter) in self.filters.iter_mut().enumerate() {
-            filter.update::<M, Meas>(model, measurements[i]);
+            vec.push(filter.update::<M, Meas>(model, measurements[i]));
         }
+        vec
     }
 
     fn estimates(&self) -> Vec<EstimatorVector> {
